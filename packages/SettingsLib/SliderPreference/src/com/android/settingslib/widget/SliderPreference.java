@@ -385,6 +385,15 @@ public class SliderPreference extends Preference {
         mSlider.setEnabled(isEnabled());
         mSlider.setClickable(isSelectable());
 
+        // Set up slider color
+        mSlider.setTrackActiveTintList(mTrackActiveColor);
+        mSlider.setTrackInactiveTintList(mTrackInactiveColor);
+        mSlider.setThumbTintList(mThumbColor);
+        mSlider.setThumbStrokeColor(mThumbColor);
+        mSlider.setHaloTintList(mHaloColor);
+        mSlider.setTickActiveTintList(mTrackInactiveColor);
+        mSlider.setTickInactiveTintList(mTrackActiveColor);
+
         // Set up slider size
         if (SettingsThemeHelper.isExpressiveTheme(getContext())) {
             mSlider.setTrackHeight(mTrackHeight);
