@@ -19,7 +19,6 @@ package com.android.settingslib.widget;
 import static android.view.HapticFeedbackConstants.CLOCK_TICK;
 
 import android.content.Context;
-import android.content.res.ColorStateList;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.os.Parcel;
@@ -35,6 +34,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceViewHolder;
 
@@ -52,16 +52,8 @@ public class SliderPreference extends Preference {
     public static final int HAPTIC_FEEDBACK_MODE_ON_TICKS = 1;
     public static final int HAPTIC_FEEDBACK_MODE_ON_ENDS = 2;
 
-    private final int mTextStartId;
-    private final int mTextEndId;
-    private final int mIconStartId;
-    private final int mIconEndId;
-    private final int mIconStartContentDescriptionId;
-    private final int mIconEndContentDescriptionId;
-    private final ColorStateList mTrackActiveColor;
-    private final ColorStateList mTrackInactiveColor;
-    private final ColorStateList mThumbColor;
-    private final ColorStateList mHaloColor;
+    private int mTextStartId;
+    private int mTextEndId;
     private final int mTrackHeight;
     private final int mTrackInsideCornerSize;
     private final int mTrackStopIndicatorSize;
@@ -76,11 +68,16 @@ public class SliderPreference extends Preference {
     private int mMin;
     private int mMax;
     private int mSliderIncrement;
+    private int mIconStartId;
+    private int mIconEndId;
+    private int mIconStartContentDescriptionId;
+    private int mIconEndContentDescriptionId;
     private int mHapticFeedbackMode = HAPTIC_FEEDBACK_MODE_NONE;
     private boolean mTickVisible = false;
     private boolean mAdjustable;
     private boolean mTrackingTouch;
     private CharSequence mSliderContentDescription;
+    private CharSequence mSliderStateDescription;
 
     private OnPreferenceChangeListener mStopListener;
 
@@ -125,6 +122,9 @@ public class SliderPreference extends Preference {
             if ((int) slider.getValue() != mSliderValue) {
                 syncValueInternal(slider);
             }
+            if (mExtraTouchListener != null) {
+                mExtraTouchListener.onStopTrackingTouch(slider);
+            }
             if (mStopListener != null) {
                 mStopListener.onPreferenceChange(SliderPreference.this, (int) slider.getValue());
             }
@@ -133,11 +133,19 @@ public class SliderPreference extends Preference {
         @Override
         public void onStartTrackingTouch(@NonNull Slider slider) {
             mTrackingTouch = true;
+            if (mExtraTouchListener != null) {
+                mExtraTouchListener.onStartTrackingTouch(slider);
+            }
         }
     };
+
     public void setOnPreferenceChangeStopListener(OnPreferenceChangeListener listener) {
         mStopListener = listener;
     }
+
+    @Nullable
+    private Slider.OnSliderTouchListener mExtraTouchListener;
+
     private LabelFormatter mLabelFormater;
     // Whether the SliderPreference should continuously save the Slider value while it is being
     // dragged.
@@ -151,8 +159,15 @@ public class SliderPreference extends Preference {
             if (fromUser && (mUpdatesContinuously || !mTrackingTouch)) {
                 syncValueInternal(slider);
             }
+            if (mExtraChangeListener != null) {
+                mExtraChangeListener.onValueChange(slider, value, fromUser);
+            }
         }
     };
+
+    @Nullable
+    private Slider.OnChangeListener mExtraChangeListener;
+
     // Whether to show the Slider value TextView next to the bar
     private boolean mShowSliderValue;
 
@@ -160,7 +175,6 @@ public class SliderPreference extends Preference {
             @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         setLayoutResource(R.layout.settingslib_expressive_preference_slider);
-        setSelectable(false);
 
         TypedArray a = context.obtainStyledAttributes(
                 attrs, androidx.preference.R.styleable.SeekBarPreference, defStyleAttr,
@@ -201,14 +215,6 @@ public class SliderPreference extends Preference {
                 R.styleable.SliderPreference_iconEndContentDescription,
                 /* defValue= */ 0);
         a.recycle();
-
-        mTrackActiveColor = context.getColorStateList(
-                R.color.settingslib_expressive_color_slider_track_active);
-        mTrackInactiveColor = context.getColorStateList(
-                R.color.settingslib_expressive_color_slider_track_inactive);
-        mThumbColor = context.getColorStateList(
-                R.color.settingslib_expressive_color_slider_thumb);
-        mHaloColor = context.getColorStateList(R.color.settingslib_expressive_color_slider_halo);
 
         Resources res = context.getResources();
         mTrackHeight = res.getDimensionPixelSize(
@@ -253,16 +259,88 @@ public class SliderPreference extends Preference {
         this(context, null);
     }
 
+
+    /**
+     * Provide an extra {@link Slider.OnSliderTouchListener} that is called in addition to the
+     * standard listener.
+     */
+    public void setExtraTouchListener(@Nullable Slider.OnSliderTouchListener listener) {
+        mExtraTouchListener = listener;
+    }
+
+    /**
+     * Provide an extra {@link Slider.OnChangeListener} that is called in addition to the
+     * standard listener.
+     */
+    public void setExtraChangeListener(@Nullable Slider.OnChangeListener listener) {
+        mExtraChangeListener = listener;
+    }
+
     private static void setIconViewAndFrameEnabled(View iconView, ViewGroup iconFrame,
             boolean enabled) {
         iconView.setEnabled(enabled);
         iconFrame.setEnabled(enabled);
     }
 
+    /** Set the start icon of the Slider. */
+    public void setIconStart(int iconStartId) {
+        if (mIconStartId != iconStartId) {
+            mIconStartId = iconStartId;
+            notifyChanged();
+        }
+    }
+
+    /** Set the description resource id of the start icon. */
+    public void setIconStartContentDescription(int iconStartContentDescriptionId) {
+        if (mIconStartContentDescriptionId != iconStartContentDescriptionId) {
+            mIconStartContentDescriptionId = iconStartContentDescriptionId;
+            notifyChanged();
+        }
+    }
+
+    /** Set the end icon of the Slider. */
+    public void setIconEnd(int iconEndId) {
+        if (mIconEndId != iconEndId) {
+            mIconEndId = iconEndId;
+            notifyChanged();
+        }
+    }
+
+    /** Set the description resource id of the end icon. */
+    public void setIconEndContentDescription(int iconEndContentDescriptionId) {
+        if (mIconEndContentDescriptionId != iconEndContentDescriptionId) {
+            mIconEndContentDescriptionId = iconEndContentDescriptionId;
+            notifyChanged();
+        }
+    }
+
+
+    /**
+     * Sets the text for the start of the slider.
+     */
+    public void setTextStart(@StringRes int textStartId) {
+        if (mTextStartId != textStartId) {
+            mTextStartId = textStartId;
+            notifyChanged();
+        }
+    }
+
+    /**
+     * Sets the text for the end of the slider.
+     */
+    public void setTextEnd(@StringRes int textEndId) {
+        if (mTextEndId != textEndId) {
+            mTextEndId = textEndId;
+            notifyChanged();
+        }
+    }
+
     @Override
     public void onBindViewHolder(@NonNull PreferenceViewHolder holder) {
         super.onBindViewHolder(holder);
         holder.itemView.setOnKeyListener(mSliderKeyListener);
+        // SliderPreference is not clickable under normal conditions.
+        holder.itemView.setClickable(false);
         mSlider = (Slider) holder.findViewById(R.id.slider);
 
         if (mSlider == null) {
@@ -292,6 +370,11 @@ public class SliderPreference extends Preference {
         } else {
             holder.itemView.setContentDescription(null);
         }
+        if (!TextUtils.isEmpty(mSliderStateDescription)) {
+            mSlider.setStateDescription(mSliderStateDescription);
+        } else {
+            mSlider.setStateDescription(null);
+        }
         mSlider.setValueFrom(mMin);
         mSlider.setValueTo(mMax);
         mSlider.setValue(mSliderValue);
@@ -302,19 +385,9 @@ public class SliderPreference extends Preference {
         mSlider.setEnabled(isEnabled());
         mSlider.setClickable(isSelectable());
 
-        // Set up slider color
-        mSlider.setTrackActiveTintList(mTrackActiveColor);
-        mSlider.setTrackInactiveTintList(mTrackInactiveColor);
-        mSlider.setThumbStrokeColor(mThumbColor);
-        mSlider.setThumbTintList(mThumbColor);
-        mSlider.setHaloTintList(mHaloColor);
-        mSlider.setTickActiveTintList(mTrackInactiveColor);
-        mSlider.setTickInactiveTintList(mTrackActiveColor);
-
         // Set up slider size
         if (SettingsThemeHelper.isExpressiveTheme(getContext())) {
             mSlider.setTrackHeight(mTrackHeight);
-            // need to drop 1.12.0 to Android
             mSlider.setTrackInsideCornerSize(mTrackInsideCornerSize);
             mSlider.setTrackStopIndicatorSize(mTrackStopIndicatorSize);
             mSlider.setThumbWidth(mThumbWidth);
@@ -347,6 +420,16 @@ public class SliderPreference extends Preference {
 
         ImageView iconEndView = (ImageView) holder.findViewById(R.id.icon_end);
         updateIconEndIfNeeded(iconEndView);
+    }
+
+    /**
+     * Gets the {@link Slider} widget owned by this preference.
+     *
+     * @return the slider widget
+     */
+    @Nullable
+    public Slider getSlider() {
+        return mSlider;
     }
 
     /**
@@ -535,6 +618,18 @@ public class SliderPreference extends Preference {
         if (!TextUtils.equals(contentDescription, mSliderContentDescription)) {
             mSliderContentDescription = contentDescription;
             notifyChanged();
+        }
+    }
+
+    /**
+     * Sets the state description of the {@link Slider}.
+     *
+     * @param stateDescription The state description of the {@link Slider}
+     */
+    public void setSliderStateDescription(@Nullable CharSequence stateDescription) {
+        mSliderStateDescription = stateDescription;
+        if (mSlider != null) {
+            mSlider.setStateDescription(stateDescription);
         }
     }
 
