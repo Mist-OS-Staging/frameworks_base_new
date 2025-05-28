@@ -42,6 +42,7 @@ import android.view.WindowManager;
 
 import com.android.internal.R;
 import com.android.internal.util.mist.Utils;
+import com.android.internal.util.neoteric.KeyProviderManager;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
