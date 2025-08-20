@@ -54,6 +54,10 @@ public class SliderPreference extends Preference {
 
     private int mTextStartId;
     private int mTextEndId;
+    private final ColorStateList mTrackActiveColor;
+    private final ColorStateList mTrackInactiveColor;
+    private final ColorStateList mThumbColor;
+    private final ColorStateList mHaloColor;
     private final int mTrackHeight;
     private final int mTrackInsideCornerSize;
     private final int mTrackStopIndicatorSize;
