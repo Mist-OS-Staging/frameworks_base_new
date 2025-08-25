@@ -55,10 +55,6 @@ public class SliderPreference extends Preference {
 
     private int mTextStartId;
     private int mTextEndId;
-    private final ColorStateList mTrackActiveColor;
-    private final ColorStateList mTrackInactiveColor;
-    private final ColorStateList mThumbColor;
-    private final ColorStateList mHaloColor;
     private final int mTrackHeight;
     private final int mTrackInsideCornerSize;
     private final int mTrackStopIndicatorSize;
@@ -389,15 +385,6 @@ public class SliderPreference extends Preference {
         mSlider.addOnChangeListener(mChangeListener);
         mSlider.setEnabled(isEnabled());
         mSlider.setClickable(isSelectable());
-
-        // Set up slider color
-        mSlider.setTrackActiveTintList(mTrackActiveColor);
-        mSlider.setTrackInactiveTintList(mTrackInactiveColor);
-        mSlider.setThumbTintList(mThumbColor);
-        mSlider.setThumbStrokeColor(mThumbColor);
-        mSlider.setHaloTintList(mHaloColor);
-        mSlider.setTickActiveTintList(mTrackInactiveColor);
-        mSlider.setTickInactiveTintList(mTrackActiveColor);
 
         // Set up slider size
         if (SettingsThemeHelper.isExpressiveTheme(getContext())) {
