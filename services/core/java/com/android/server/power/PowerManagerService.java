@@ -4836,6 +4836,10 @@ public final class PowerManagerService extends SystemService
                     AxExtServiceFactory.getBoostAdjuster().boostHint("launch", 2000);
                 }
                 break;
+            case Mode.GAME:
+            case Mode.GAME_LOADING:
+                AxExtServiceFactory.getBoostAdjuster().boostGame(enabled);
+                break;
             default:
                 break;
         }
