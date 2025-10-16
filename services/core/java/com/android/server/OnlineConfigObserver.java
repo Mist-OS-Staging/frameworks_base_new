@@ -44,7 +44,7 @@ public class OnlineConfigObserver {
     private static final boolean DEBUG = false;
 
     private static final String CONFIG_URL =
-            "https://raw.githubusercontent.com/Lunaris-AOSP/system_config/refs/heads/16/lunaris.json";
+            "https://raw.githubusercontent.com/Mist-OS-Staging/system_config/refs/heads/4.3/mist.json";
 
     private static final long CONFIG_INTERVAL_MS = 60000;
 
