@@ -14081,6 +14081,11 @@ public final class Settings {
         public static final String PULSE_RENDERER = "pulse_renderer";
 
         /**
+         * @hide
+         */
+        public static final String PULSE_SHOW_ON_AMBIENT = "pulse_show_on_ambient";
+
+        /**
          * Translucent notifications
          * @hide
          */
