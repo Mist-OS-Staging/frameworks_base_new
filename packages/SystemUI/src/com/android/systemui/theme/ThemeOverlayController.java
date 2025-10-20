@@ -66,6 +66,7 @@ import android.util.SparseIntArray;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 
+import com.android.internal.graphics.cam.Cam;
 import com.android.internal.graphics.ColorUtils;
 import com.android.systemui.CoreStartable;
 import com.android.systemui.Dumpable;
@@ -130,7 +131,7 @@ import javax.inject.Inject;
 public class ThemeOverlayController implements CoreStartable, Dumpable {
     protected static final String TAG = "ThemeOverlayController";
     private static final boolean DEBUG = true;
-
+    
     private final ThemeOverlayApplier mThemeManager;
     private final UserManager mUserManager;
     private final BroadcastDispatcher mBroadcastDispatcher;
@@ -141,7 +142,7 @@ public class ThemeOverlayController implements CoreStartable, Dumpable {
     private final Handler mBgHandler;
     private final Context mContext;
     private final boolean mIsMonetEnabled;
-    private final boolean mIsFidelityEnabled;
+    private boolean mIsFidelityEnabled;
     private final UserTracker mUserTracker;
     private final DeviceProvisionedController mDeviceProvisionedController;
     private final Resources mResources;
@@ -159,6 +160,7 @@ public class ThemeOverlayController implements CoreStartable, Dumpable {
     protected int mMainWallpaperColor = Color.TRANSPARENT;
     // UI contrast as reported by UiModeManager
     private double mContrast = 0.0;
+    private double mChromaBoost = 0.0;
     // Theme variant: Vibrant, Tonal, Expressive, etc
     @VisibleForTesting
     @Style.Type
@@ -503,12 +505,6 @@ public class ThemeOverlayController implements CoreStartable, Dumpable {
                     }
                 },
                 UserHandle.USER_ALL);
-        mContrast = mUiModeManager.getContrast();
-        mUiModeManager.addContrastChangeListener(mMainExecutor, contrast -> {
-            mContrast = contrast;
-            // Force reload so that we update even when the main color has not changed
-            reevaluateSystemTheme(true /* forceReload */);
-        });
 
         mSecureSettings.registerContentObserverForUserSync(
                 LineageSettings.Secure.getUriFor(LineageSettings.Secure.BERRY_BLACK_THEME),
@@ -708,16 +704,20 @@ public class ThemeOverlayController implements CoreStartable, Dumpable {
 
     protected FabricatedOverlay createNeutralOverlay() {
         FabricatedOverlay overlay = newFabricatedOverlay("neutral");
+
         assignTonalPaletteToOverlay("neutral1", overlay, mColorScheme.getNeutral1());
         assignTonalPaletteToOverlay("neutral2", overlay, mColorScheme.getNeutral2());
+
         return overlay;
     }
 
     protected FabricatedOverlay createAccentOverlay() {
         FabricatedOverlay overlay = newFabricatedOverlay("accent");
+
         assignTonalPaletteToOverlay("accent1", overlay, mColorScheme.getAccent1());
         assignTonalPaletteToOverlay("accent2", overlay, mColorScheme.getAccent2());
         assignTonalPaletteToOverlay("accent3", overlay, mColorScheme.getAccent3());
+
         return overlay;
     }
 
@@ -727,9 +727,13 @@ public class ThemeOverlayController implements CoreStartable, Dumpable {
 
         tonalPalette.allShadesMapped.forEach((key, value) -> {
             String resourceName = resourcePrefix + "_" + key;
-            int colorValue = ColorUtils.setAlphaComponent(value, 0xFF);
-            overlay.setResourceValue(resourceName, TYPE_INT_COLOR_ARGB8, colorValue,
-                    null /* configuration */);
+
+            Cam cam = Cam.fromInt(value);
+            float boostedChroma = (float) (cam.getChroma() * (1.0 + mChromaBoost / 100.0));
+            boostedChroma = Math.min(boostedChroma, 150f);
+            int boostedColor = ColorUtils.CAMToColor(cam.getHue(), boostedChroma, cam.getJ());
+            boostedColor = ColorUtils.setAlphaComponent(boostedColor, 0xFF);
+            overlay.setResourceValue(resourceName, TYPE_INT_COLOR_ARGB8, boostedColor, null);
         });
     }
 
@@ -818,6 +822,12 @@ public class ThemeOverlayController implements CoreStartable, Dumpable {
         if (!TextUtils.isEmpty(overlayPackageJson)) {
             try {
                 JSONObject object = new JSONObject(overlayPackageJson);
+                
+                mContrast = object.optDouble("_contrast_level", 0.0);
+                mChromaBoost = object.optDouble("_chroma_boost", 0.0);
+
+                mIsFidelityEnabled = object.optBoolean("_fidelity_enabled", false);
+
                 for (String category : ThemeOverlayApplier.THEME_CATEGORIES) {
                     if (object.has(category)) {
                         OverlayIdentifier identifier =
@@ -917,6 +927,21 @@ public class ThemeOverlayController implements CoreStartable, Dumpable {
 
     }
 
+    private Integer parseColorOverride(JSONObject object, String key) {
+        try {
+            if (object.has(key)) {
+                String colorString = object.getString(key);
+                if (!colorString.startsWith("#")) {
+                    colorString = "#" + colorString;
+                }
+                return Color.parseColor(colorString);
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to parse color override for " + key, e);
+        }
+        return null;
+    }
+
     @Style.Type
     private int fetchThemeStyleFromSetting() {
         // Allow-list of Style objects that can be created from a setting string, i.e. can be
@@ -934,7 +959,7 @@ public class ThemeOverlayController implements CoreStartable, Dumpable {
             try {
                 JSONObject object = new JSONObject(overlayPackageJson);
                 style = Style.valueOf(
-                        object.getString(OVERLAY_CATEGORY_THEME_STYLE));
+                        object.optString(OVERLAY_CATEGORY_THEME_STYLE, Style.name(Style.TONAL_SPOT)));
                 if (!validStyles.contains(style)) {
                     style = Style.TONAL_SPOT;
                 }
