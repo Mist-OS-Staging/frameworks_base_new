@@ -1,8 +1,11 @@
 package org.mist.systemui.lockscreen.type.moremorethin;
 
 import android.content.Context;
+import android.graphics.Color;
+import android.util.TypedValue;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.TextView;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.ConstraintSet;
 
@@ -14,6 +17,8 @@ import org.mist.systemui.lockscreen.util.GlassClockManager;
 import org.mist.systemui.lockscreen.util.LockscreenClockUtils;
 import org.mist.systemui.lockscreen.util.LockscreenLayoutManager;
 
+import java.util.Locale;
+
 public class MoreMoreThinClockController extends BaseLockscreenController {
 
     private static final int DIGIT_WIDTH_DP = 117;
@@ -21,6 +26,7 @@ public class MoreMoreThinClockController extends BaseLockscreenController {
 
     private ImageView mHour1, mHour2, mMinute1, mMinute2;
     private ImageView[] mDigitViews;
+    private TextView mDateView;
     private DigitalClockDisplayManager mDigitalClockDisplayManager;
 
     private boolean mUseBlurEffect;
@@ -56,6 +62,13 @@ public class MoreMoreThinClockController extends BaseLockscreenController {
     private void createViews() {
         mContainer = new ConstraintLayout(mContext);
         mContainer.setId(View.generateViewId());
+
+        mDateView = new TextView(mContext);
+        mDateView.setId(View.generateViewId());
+        mDateView.setTextColor(Color.WHITE);
+        mDateView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 30);
+        mDateView.setAlpha(0.8f);
+        mContainer.addView(mDateView);
 
         if (mUseBlurEffect) {
             mGlassClockManager = new GlassClockManager(mContext, 4, mDigitResources);
@@ -117,6 +130,10 @@ public class MoreMoreThinClockController extends BaseLockscreenController {
             cs.setVerticalBias(id, 0.13f); 
         }
 
+        cs.connect(mDateView.getId(), ConstraintSet.TOP, clockViewIds[0], ConstraintSet.BOTTOM, dpToPx(8));
+        cs.connect(mDateView.getId(), ConstraintSet.START, clockViewIds[0], ConstraintSet.START);
+        cs.connect(mDateView.getId(), ConstraintSet.END, clockViewIds[1], ConstraintSet.END);
+
         mLayoutManager.applyLayoutChanges();
     }
 
@@ -128,6 +145,7 @@ public class MoreMoreThinClockController extends BaseLockscreenController {
         } else {
             mDigitalClockDisplayManager.updateTimeDisplay(timeString);
         }
+        mDateView.setText(LockscreenClockUtils.getDateWithWeekdayString(mContext));
     }
 
     @Override
@@ -136,6 +154,10 @@ public class MoreMoreThinClockController extends BaseLockscreenController {
     @Override
     public void applyStyles() {
         if (!mUseBlurEffect) {
+            int hourColor = LockscreenClockUtils.parseColor(CustomLockscreenSettings.getHourColor());
+            mDateView.setTextColor(hourColor);
+            mDateView.setAlpha(0.8f);
+
             ImageView[] hourViews = {mHour1, mHour2};
             ImageView[] minuteViews = {mMinute1, mMinute2};
             mDigitalClockDisplayManager.applyColorAndEffects(hourViews, minuteViews);

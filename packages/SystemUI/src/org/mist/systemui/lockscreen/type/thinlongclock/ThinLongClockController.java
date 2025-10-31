@@ -1,8 +1,11 @@
 package org.mist.systemui.lockscreen.type.thinlongclock;
 
 import android.content.Context;
+import android.graphics.Color;
+import android.util.TypedValue;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.TextView;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.ConstraintSet;
 
@@ -14,6 +17,8 @@ import org.mist.systemui.lockscreen.util.GlassClockManager;
 import org.mist.systemui.lockscreen.util.LockscreenClockUtils;
 import org.mist.systemui.lockscreen.util.LockscreenLayoutManager;
 
+import java.util.Locale;
+
 public class ThinLongClockController extends BaseLockscreenController {
 
     private static final int DIGIT_WIDTH_DP = 94;
@@ -21,6 +26,7 @@ public class ThinLongClockController extends BaseLockscreenController {
 
     private ImageView mHour1, mHour2, mMinute1, mMinute2;
     private ImageView[] mDigitViews;
+    private TextView mDateView;
     private DigitalClockDisplayManager mDigitalClockDisplayManager;
     private LockscreenLayoutManager mLayoutManager;
 
@@ -58,6 +64,13 @@ public class ThinLongClockController extends BaseLockscreenController {
         mContainer = new ConstraintLayout(mContext);
         mContainer.setId(View.generateViewId());
 
+        mDateView = new TextView(mContext);
+        mDateView.setId(View.generateViewId());
+        mDateView.setTextColor(Color.WHITE);
+        mDateView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 30);
+        mDateView.setAlpha(0.8f);
+        mContainer.addView(mDateView);
+
         //Add blur
         if (mUseBlurEffect) {
             mGlassClockManager = new GlassClockManager(mContext, 4, mDigitResources);
@@ -82,7 +95,7 @@ public class ThinLongClockController extends BaseLockscreenController {
             mDigitalClockDisplayManager = new DigitalClockDisplayManager(mDigitViews, mDigitResources);
         }
     }
-    
+
     private ImageView createImageView() {
         ImageView iv = new ImageView(mContext);
         iv.setId(View.generateViewId());
@@ -90,7 +103,6 @@ public class ThinLongClockController extends BaseLockscreenController {
         iv.setScaleType(ImageView.ScaleType.FIT_CENTER);
         return iv;
     }
-
 
     private void setupLayout() {
         ConstraintSet cs = mLayoutManager.getConstraintSet();
@@ -116,6 +128,10 @@ public class ThinLongClockController extends BaseLockscreenController {
             cs.setVerticalBias(id, 0.13f);
         }
         
+        cs.connect(mDateView.getId(), ConstraintSet.TOP, clockViewIds[0], ConstraintSet.BOTTOM, dpToPx(8));
+        cs.connect(mDateView.getId(), ConstraintSet.START, clockViewIds[0], ConstraintSet.START);
+        cs.connect(mDateView.getId(), ConstraintSet.END, clockViewIds[1], ConstraintSet.END);
+        
         mLayoutManager.applyLayoutChanges();
     }
 
@@ -128,6 +144,7 @@ public class ThinLongClockController extends BaseLockscreenController {
         } else {
             mDigitalClockDisplayManager.updateTimeDisplay(timeString);
         }
+        mDateView.setText(LockscreenClockUtils.getDateWithWeekdayString(mContext));
     }
 
     @Override
@@ -137,6 +154,10 @@ public class ThinLongClockController extends BaseLockscreenController {
     public void applyStyles() {
         //Add blur
         if (!mUseBlurEffect) {
+            int hourColor = LockscreenClockUtils.parseColor(CustomLockscreenSettings.getHourColor());
+            mDateView.setTextColor(hourColor);
+            mDateView.setAlpha(0.8f);
+
             ImageView[] hourViews = {mHour1, mHour2};
             ImageView[] minuteViews = {mMinute1, mMinute2};
             mDigitalClockDisplayManager.applyColorAndEffects(hourViews, minuteViews);

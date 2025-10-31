@@ -150,13 +150,12 @@ public class EasternCharactersClockController extends BaseLockscreenController {
 
     private void updateDateInfo() {
         Date now = new Date();
-        SimpleDateFormat weekDayFormat = new SimpleDateFormat("EEEEa", Locale.CHINESE);
-        SimpleDateFormat dateFormat = new SimpleDateFormat("M月d日 H:mm", Locale.CHINESE);
+        String dateFormat = mContext.getString(R.string.date_format);
+        SimpleDateFormat weekDayFormat = new SimpleDateFormat(dateFormat, Locale.getDefault());
         
-        String weekDayStr = weekDayFormat.format(now).replace("星期", "周");
-        String dateStr = dateFormat.format(now);
+        String dateStr = weekDayFormat.format(now);
         
-        mDateInfoView.setText(String.format("%s\n%s", weekDayStr, dateStr));
+        mDateInfoView.setText(String.format("%s", dateStr));
     }
     
     private void updateTextView(TextView view, String text) {
