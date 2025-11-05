@@ -60,7 +60,7 @@ public class LockGlympsService extends Service {
     private static final String LOCK_GLYMPS_CUSTOM_URLS = "lock_glymps_custom_urls";
     private static final String LOCK_GLYMPS_CHANGE_ON = "lock_glymps_change_on";
     
-    private static final String STORAGE_FOLDER = "LunarisGlymps";
+    private static final String STORAGE_FOLDER = "MistifyGlymps";
     
     private WallpaperManager mWallpaperManager;
     private ExecutorService mExecutor;
