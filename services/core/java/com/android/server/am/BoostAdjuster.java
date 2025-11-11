@@ -34,6 +34,7 @@ import android.provider.Settings;
 import android.util.Slog;
 import com.android.server.NtServiceInjector;
 import com.android.server.UiThread;
+import com.android.internal.util.ScrollOptimizer;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -331,6 +332,9 @@ public class BoostAdjuster implements IBoostAdjuster {
             int threadPriority = Process.getThreadPriority(pid);
 
             if (duration >= 0) {
+                ScrollOptimizer.disableOptimizer(false);
+                ScrollOptimizer.setUITaskStatus(true);
+                ScrollOptimizer.setFlingFlag(ScrollOptimizer.FLING_START);
                 Process.setThreadScheduler(pid, SCHED_FIFO | SCHED_RESET_ON_FORK, 99);
                 if (renderTid > 0) Process.setThreadScheduler(renderTid, SCHED_FIFO | SCHED_RESET_ON_FORK, 99);
                 boostRestricted(pid, 1);
@@ -353,6 +357,8 @@ public class BoostAdjuster implements IBoostAdjuster {
                     boostRestricted(renderTid, 0);
                 }
                 boostAnimationExt(false);
+                ScrollOptimizer.setFlingFlag(ScrollOptimizer.FLING_END);
+                ScrollOptimizer.setUITaskStatus(false);
             }
         } catch (Exception e) {
             Slog.w(TAG, "Failed to set/restore scheduling policy\n" + e);
