@@ -36,7 +36,7 @@ class NTCpuBindController private constructor() {
             return
         }
         mBindStatus = STATUS_BIND_BIG_CORE
-        BoostHelper.setThreadAffinity(pid, STATUS_BIND_BIG_CORE)
+        Process.setThreadAffinity(pid, STATUS_BIND_BIG_CORE)
     }
 
     fun bindSmallCore() {
@@ -44,7 +44,7 @@ class NTCpuBindController private constructor() {
             return
         }
         mBindStatus = STATUS_BIND_SMALL_CORE
-        BoostHelper.setThreadAffinity(pid, STATUS_BIND_SMALL_CORE)
+        Process.setThreadAffinity(pid, STATUS_BIND_SMALL_CORE)
     }
 
     fun unbind() {
@@ -52,7 +52,7 @@ class NTCpuBindController private constructor() {
             return
         }
         mBindStatus = STATUS_UNBIND
-        BoostHelper.setThreadAffinity(pid, STATUS_UNBIND)
+        Process.setThreadAffinity(pid, STATUS_UNBIND)
     }
 
     fun animationBoostOn(type: Int) {
