@@ -554,8 +554,12 @@ public class OomAdjuster {
                 Slog.d(TAG, pid + ": target set cpuset: " + group);
                 Process.setThreadGroupAndCpuset(pid, group);
                 Process.setProcessGroup(pid, THREAD_GROUP_RESTRICTED);
+                Process.setThreadAffinity(pid, 2);
             } else {
+                Process.setThreadGroupAndCpuset(pid, group);
                 Process.setProcessGroup(pid, group);
+                boolean isPerceptible = group == THREAD_GROUP_TOP_APP;
+                Process.setThreadAffinity(pid, isPerceptible ? 2 : 1);
             }
         } catch (Exception e) {
             if (DEBUG_ALL) {
