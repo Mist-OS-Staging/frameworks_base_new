@@ -163,10 +163,12 @@ public class BoostAdjuster implements IBoostAdjuster {
         mSystemReady = true;
         
         if (mModernKernel) {
-            Process.setThreadScheduler(mBoostHandlerThread.getThreadId(),
-                 SCHED_RR | SCHED_RESET_ON_FORK, 1);
-            Process.setThreadScheduler(mFreezeHandlerThread.getThreadId(),
-                 SCHED_RR | SCHED_RESET_ON_FORK, 1);
+            final int boostTid = mBoostHandlerThread.getThreadId();
+            final int freezeTid = mFreezeHandlerThread.getThreadId();
+            Process.setThreadScheduler(boostTid, SCHED_RR | SCHED_RESET_ON_FORK, 1);
+            Process.setThreadScheduler(freezeTid, SCHED_RR | SCHED_RESET_ON_FORK, 1);
+            Process.setThreadAffinity(boostTid, 1);
+            Process.setThreadAffinity(freezeTid, 1);
         }
     }
 
