@@ -19639,6 +19639,11 @@ public class ActivityManagerService extends IActivityManager.Stub
     }
     
     @Override
+    public void boostThread(int tid) {
+        AxExtServiceFactory.getBoostAdjuster().boostThread(tid);
+    }
+    
+    @Override
     public boolean shouldForceLongScreen(String packageName) {
         return mActivityTaskManager.shouldForceLongScreen(packageName);
     }

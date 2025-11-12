@@ -410,7 +410,7 @@ public class BoostAdjuster implements IBoostAdjuster {
         if (mData == null) return;
         final long duration = limit ? 0L : -1L;
         final String bgLimit = limit ? mData.bgLimit : mData.allCores;
-        final String ntFgLimit = limit ? mData.uiLimit : mData.allCores;
+        final String ntFgLimit = limit ? mData.uiLimit : mData.fgLimited;
         adjustCpusetCpus(CPU_NT_FG, ntFgLimit, duration);
         adjustCpusetCpus(CPU_DEX2OAT, bgLimit, duration);
         adjustCpusetCpus(CPU_BG, bgLimit, duration);
@@ -813,5 +813,17 @@ public class BoostAdjuster implements IBoostAdjuster {
 
         logger("boostInstall boost=" + boost +
                 " threads=" + threadCount + " cpuset=" + cpuSet);
+    }
+    
+    public void boostThread(int tid) {
+        Process.setThreadGroupAndCpuset(tid, Process.THREAD_GROUP_TOP_APP);
+        Process.setThreadAffinity(tid, 0);
+        if (mModernKernel) Process.setThreadScheduler(tid, SCHED_FIFO, 20);
+    }
+    
+    public void boostThreadLimited(int tid) {
+        Process.setThreadGroupAndCpuset(tid, AxUtils.THREAD_GROUP_NT_FOREGROUND);
+        Process.setThreadAffinity(tid, 2);
+        if (mModernKernel) Process.setThreadScheduler(tid, SCHED_FIFO, 20);
     }
 }

@@ -141,6 +141,7 @@ import com.android.server.ServiceThread;
 import com.android.server.SystemService;
 import com.android.server.UiThread;
 import com.android.server.Watchdog;
+import com.android.server.am.ActivityManagerService;
 import com.android.server.am.BatteryStatsService;
 import com.android.server.display.feature.DeviceConfigParameterProvider;
 import com.android.server.lights.LightsManager;
@@ -4836,6 +4837,9 @@ public final class PowerManagerService extends SystemService
             case Mode.LAUNCH:
                 if (enabled) {
                     AxExtServiceFactory.getBoostAdjuster().boostHint("launch", 2000);
+                    Process.setThreadAffinity(ActivityManagerService.MY_PID, 0);
+                } else {
+                    Process.setThreadAffinity(ActivityManagerService.MY_PID, 2);
                 }
                 break;
             case Mode.GAME:
