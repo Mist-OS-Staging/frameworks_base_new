@@ -206,6 +206,8 @@ public abstract class WMShellConcurrencyModule {
     public static ShellExecutor provideSplashScreenExecutor() {
         HandlerThread shellSplashscreenThread = new HandlerThread("wmshell.splashscreen",
                 THREAD_PRIORITY_TOP_APP_BOOST);
+        int threadId = shellSplashscreenThread.getThreadId();
+        if (threadId > 0) BoostHelper.boostThread(threadId);
         shellSplashscreenThread.start();
         return new HandlerExecutor(shellSplashscreenThread.getThreadHandler());
     }
