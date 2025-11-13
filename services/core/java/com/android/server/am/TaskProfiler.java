@@ -22,10 +22,6 @@ import android.os.StrictMode;
 import android.util.Slog;
 
 import com.android.server.AxExtServiceFactory;
-import com.android.server.AnimationThread;
-import com.android.server.DisplayThread;
-import com.android.server.UiThread;
-import com.android.server.wm.SurfaceAnimationThread;
 
 import java.io.*;
 import java.util.*;
@@ -41,7 +37,6 @@ public class TaskProfiler {
 
     public void initTaskProfiles() {
         try {
-            AxExtServiceFactory.getBoostAdjuster().boostThreadLimited(MY_PID);
             int inputReaderTid = findThreadIdByName(MY_PID, "InputReader");
             int inputDispatcherTid = findThreadIdByName(MY_PID, "InputDispatcher");
 
