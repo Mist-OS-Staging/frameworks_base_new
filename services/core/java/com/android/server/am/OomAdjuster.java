@@ -546,6 +546,7 @@ public class OomAdjuster {
         }
         try {
             final boolean isPerceptible = group == THREAD_GROUP_TOP_APP;
+            final int affinity = isPerceptible ? 2 : 1;
             if (AxUtils.isInPerfList(processName)) {
                 Slog.d(TAG, "set group = " + group);
             }
@@ -553,22 +554,21 @@ public class OomAdjuster {
                 final int newGroup = isPerceptible ? group : AxUtils.THREAD_GROUP_NT_FOREGROUND;
                 Process.setThreadGroupAndCpuset(pid, newGroup);
                 Process.setProcessGroup(pid, newGroup);
-                Process.setThreadAffinity(pid, isPerceptible ? 2 : 1);
+                Process.setThreadAffinity(pid, affinity);
                 Slog.d(TAG, "limit set group = " + group);
                 return;
             }
             if (AxUtils.isInPerfList(processName) && !AxUtils.isCamera(processName) 
-                || AxUtils.isCamera(processName) && (group == THREAD_GROUP_TOP_APP 
-                    || group == THREAD_GROUP_RESTRICTED)) {
+                    || AxUtils.isCamera(processName)) {
                 Slog.d(TAG, pid + ": target set cpuset: " + group);
-                Process.setThreadGroupAndCpuset(pid, group);
-                Process.setProcessGroup(pid, THREAD_GROUP_RESTRICTED);
-                Process.setThreadAffinity(pid, 2);
-            } else {
-                Process.setThreadGroupAndCpuset(pid, group);
-                Process.setProcessGroup(pid, group);
-                Process.setThreadAffinity(pid, isPerceptible ? 2 : 1);
+                Process.setThreadGroupAndCpuset(pid, THREAD_GROUP_TOP_APP);
+                Process.setProcessGroup(pid, THREAD_GROUP_TOP_APP);
+                Process.setThreadAffinity(pid, affinity);
+                return;
             }
+            Process.setThreadGroupAndCpuset(pid, group);
+            Process.setProcessGroup(pid, group);
+            Process.setThreadAffinity(pid, affinity);
         } catch (Exception e) {
             if (DEBUG_ALL) {
                 Slog.w(TAG, "Failed setting process group of " + pid + " to " + group, e);
