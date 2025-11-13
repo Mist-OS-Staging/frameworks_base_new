@@ -343,7 +343,7 @@ public final class DeviceData {
         String boostCpus = joinRanges(bigR, primeR);
 
         String bgLimit = rangeTo(sCores, 2);
-        String uiLimit = smallR;
+        String uiLimit = rangeTo(sCores, 3);
         
         propSet("cpu_small", sCores);
         propSet("cpu_big", bCores);

@@ -33,7 +33,10 @@ import android.os.Process;
 import android.provider.Settings;
 import android.util.Slog;
 import com.android.server.NtServiceInjector;
+import com.android.server.AnimationThread;
+import com.android.server.DisplayThread;
 import com.android.server.UiThread;
+import com.android.server.wm.SurfaceAnimationThread;
 import com.android.server.wm.WindowEventHelper;
 import com.android.internal.util.ScrollOptimizer;
 import java.io.File;
@@ -161,8 +164,20 @@ public class BoostAdjuster implements IBoostAdjuster {
         mModernKernel = verifyKernel(kernelVersion);
 
         mSystemReady = true;
-        
+
         if (mModernKernel) {
+            // boost system server only once to avoid affecting ss thread ids
+            Process.setThreadGroupAndCpuset(ActivityManagerService.MY_PID, Process.THREAD_GROUP_TOP_APP);
+            Process.setThreadScheduler(ActivityManagerService.MY_PID, SCHED_FIFO, 20);
+
+            // pin display threads to bIg cores for modern kernels
+            boostThread(DisplayThread.get().getThreadId());
+            boostThread(AnimationThread.get().getThreadId());
+            boostThread(SurfaceAnimationThread.get().getThreadId());
+            boostThread(UiThread.get().getThreadId());
+
+            // promote boost adjuster threads to RT ~ NT-Dragonite. 
+            // on legacy kernels the threads will stay as bg threads
             final int boostTid = mBoostHandlerThread.getThreadId();
             final int freezeTid = mFreezeHandlerThread.getThreadId();
             Process.setThreadScheduler(boostTid, SCHED_RR | SCHED_RESET_ON_FORK, 1);
@@ -242,26 +257,33 @@ public class BoostAdjuster implements IBoostAdjuster {
         }
     }
 
-    private void boostRestricted(int pid, int enable) {
+    private void tryBoostThreadPriority(int pid, int rtid, int enable) {
         Message msg = mHandler.obtainMessage(MSG_RESTRICTED_COUNTER_UPDATE);
-        msg.arg1 = pid;
-        msg.arg2 = enable;
+        Bundle data = new Bundle();
+        data.putInt("pid", pid);
+        data.putInt("rtid", rtid);
+        data.putInt("enable", enable);
+        msg.setData(data);
         mHandler.sendMessage(msg);
     }
 
-    private void updateCpuctlRestrictedCounter(int pid, int enable) {
+    private void updateCpuctlRestrictedCounter(int pid, int rtid, int enable) {
         mRestrictedPidMap.put(Integer.valueOf(pid), Integer.valueOf(enable));
         logger("updateCpuctlRestrictedCounter: mRestrictedPidMap: " + mRestrictedPidMap.toString());
-        boostPid(pid, enable);
+        boostThreadPriority(pid, rtid, enable);
     }
 
-    private void boostPid(int pid, int enable) {
+    private void boostThreadPriority(int pid, int rtid, int enable) {
         if (mData == null) return;
         logger("restricted pid = " + pid + ", enable = " + enable);
         if (enable == 1) {
             try {
-                Process.setThreadGroupAndCpuset(pid, Process.THREAD_GROUP_TOP_APP);
+                Process.setThreadGroupAndCpuset(pid, Process.THREAD_GROUP_RESTRICTED);
                 Process.setProcessGroup(pid, THREAD_GROUP_RESTRICTED);
+                if (rtid > 0) {
+                    Process.setThreadGroupAndCpuset(rtid, Process.THREAD_GROUP_RESTRICTED);
+                    Process.setProcessGroup(rtid, THREAD_GROUP_RESTRICTED);
+                }
                 if (mModernKernel) {
                     FileUtils.stringToFile(RESTRICTED_UC_MIN, String.valueOf(100));
                     FileUtils.stringToFile(RESTRICTED_UC_MAX, String.valueOf(100));
@@ -276,6 +298,10 @@ public class BoostAdjuster implements IBoostAdjuster {
             if (isNeedBoostOff()) {
                 Process.setThreadGroupAndCpuset(pid, Process.THREAD_GROUP_TOP_APP);
                 Process.setProcessGroup(pid, Process.THREAD_GROUP_TOP_APP);
+                if (rtid > 0) {
+                    Process.setThreadGroupAndCpuset(rtid, Process.THREAD_GROUP_TOP_APP);
+                    Process.setProcessGroup(rtid, Process.THREAD_GROUP_TOP_APP);
+                }
                 if (mModernKernel) {
                     FileUtils.stringToFile(RESTRICTED_UC_MIN, String.valueOf(0));
                     FileUtils.stringToFile(RESTRICTED_UC_MAX, String.valueOf(100));
@@ -347,7 +373,6 @@ public class BoostAdjuster implements IBoostAdjuster {
             if (duration >= 0) {
                 ScrollOptimizer.disableOptimizer(false);
                 ScrollOptimizer.setUITaskStatus(true);
-                ScrollOptimizer.setFlingFlag(ScrollOptimizer.FLING_START);
                 if (mModernKernel) {
                     Process.setThreadScheduler(pid, SCHED_FIFO | SCHED_RESET_ON_FORK, 99);
                     if (renderTid > 0) Process.setThreadScheduler(renderTid, SCHED_FIFO | SCHED_RESET_ON_FORK, 99);
@@ -358,39 +383,15 @@ public class BoostAdjuster implements IBoostAdjuster {
                     mDemotedPid = focusedPid;
                     logger("animationboost: demoted focused pid = " + mDemotedPid + " duration = " + duration);
                 }
-                boostRestricted(pid, 1);
-                boostRestricted(renderTid, 1);
+                tryBoostThreadPriority(pid, renderTid, 1);
                 boostAnimationExt(true);
-                if (duration == 0) return; 
-                Message m = mHandler.obtainMessage(pid);
-                m.setCallback(new PrioBoostResetRunnable(pid, threadPriority, renderTid));
-                mHandler.removeMessages(pid);
-                mHandler.sendMessageDelayed(m, duration);
-                return;
             }
-
-            if (duration == -1) {
-                if (mModernKernel) {
-                    Process.setThreadScheduler(pid, 0, 0);
-                    Process.setThreadPriority(pid, threadPriority);
-                }
-                boostRestricted(pid, 0);
-                if (renderTid > 0) {
-                    if (mModernKernel) {
-                        Process.setThreadScheduler(renderTid, 0, 0);
-                    }
-                    boostRestricted(renderTid, 0);
-                }
-                boostAnimationExt(false);
-                ScrollOptimizer.setFlingFlag(ScrollOptimizer.FLING_END);
-                ScrollOptimizer.setUITaskStatus(false);
-                if (mDemotedPid != -1) {
-                    Process.setThreadGroupAndCpuset(mDemotedPid, Process.THREAD_GROUP_TOP_APP);
-                    Process.setProcessGroup(mDemotedPid, Process.THREAD_GROUP_TOP_APP);
-                    mDemotedPid = -1;
-                    logger("animationboost: promoting demoted pid = " + mDemotedPid + " duration = " + duration);
-                }
-            }
+            if (duration == 0) return;
+            if (duration == -1) duration = 0;
+            Message m = mHandler.obtainMessage(pid);
+            m.setCallback(new PrioBoostResetRunnable(pid, threadPriority, renderTid));
+            mHandler.removeMessages(pid);
+            mHandler.sendMessageDelayed(m, duration);
         } catch (Exception e) {
             Slog.w(TAG, "Failed to set/restore scheduling policy\n" + e);
         }
@@ -452,11 +453,18 @@ public class BoostAdjuster implements IBoostAdjuster {
             try {
                 if (mModernKernel) {
                     Process.setThreadScheduler(pid, 0, 0);
-                    Process.setThreadPriority(prio);
-                    Process.setThreadScheduler(rtid, 0, 0);
+                    Process.setThreadPriority(pid, prio);
+                    Process.setThreadScheduler(pid, 0, 0);
+                    if (rtid > 0) Process.setThreadScheduler(rtid, 0, 0);
                 }
-                boostRestricted(pid, 0);
+                tryBoostThreadPriority(pid, rtid, 0);
                 boostAnimationExt(false);
+                if (mDemotedPid != -1) {
+                    Process.setThreadGroupAndCpuset(mDemotedPid, Process.THREAD_GROUP_TOP_APP);
+                    Process.setProcessGroup(mDemotedPid, Process.THREAD_GROUP_TOP_APP);
+                    logger("animationboost: promoting demoted pid = " + mDemotedPid);
+                    mDemotedPid = -1;
+                }
             } catch (Exception e) {
                 Slog.w(TAG, "Failed to restore scheduling policy\n" + e);
             }
@@ -524,7 +532,12 @@ public class BoostAdjuster implements IBoostAdjuster {
                     }
                     break;
                 case MSG_RESTRICTED_COUNTER_UPDATE:
-                    updateCpuctlRestrictedCounter(msg.arg1, msg.arg2);
+                    Bundle data = msg.getData();
+                    updateCpuctlRestrictedCounter(
+                        data.getInt("pid"),
+                        data.getInt("rtid"),
+                        data.getInt("enable")
+                    );
                     break;
                 case MSG_CPU_UPDATE_NT_FG:
                     ntFgCpusetOverrides.remove(Integer.valueOf(msg.arg1));
@@ -664,11 +677,8 @@ public class BoostAdjuster implements IBoostAdjuster {
     
     public void getProcessesAndFrozen(String packageName) {
         if (!mModernKernel) return;
-        if (mFreezeHandler == null || packageName == null) {
-            return;
-        }
-        if (mFreezing) {
-            logger("AnimationFreeze: freezing, ignore!");
+        if (mFreezeHandler == null || packageName == null || mFreezing) {
+            logger("AnimationFreeze: freezing not needed. ignoring!");
             return;
         }
         mResumedPackage = packageName;
@@ -817,15 +827,23 @@ public class BoostAdjuster implements IBoostAdjuster {
                 " threads=" + threadCount + " cpuset=" + cpuSet);
     }
     
+    private void boostThreadInternal(int tid, boolean limited) {
+        mHandler.post(() -> {
+            Process.setThreadGroupAndCpuset(tid, Process.THREAD_GROUP_TOP_APP);
+            Process.setThreadAffinity(tid, limited ? 1 : 0);
+            if (mModernKernel) Process.setThreadScheduler(tid, SCHED_FIFO, 20);
+        });
+    }
+    
     public void boostThread(int tid) {
-        Process.setThreadGroupAndCpuset(tid, Process.THREAD_GROUP_TOP_APP);
-        Process.setThreadAffinity(tid, 0);
-        if (mModernKernel) Process.setThreadScheduler(tid, SCHED_FIFO, 20);
+        boostThreadInternal(tid, false);
     }
     
     public void boostThreadLimited(int tid) {
-        Process.setThreadGroupAndCpuset(tid, AxUtils.THREAD_GROUP_NT_FOREGROUND);
-        Process.setThreadAffinity(tid, 2);
-        if (mModernKernel) Process.setThreadScheduler(tid, SCHED_FIFO, 20);
+        boostThreadInternal(tid, true);
+    }
+    
+    public boolean isModernKernel() {
+        return mModernKernel;
     }
 }

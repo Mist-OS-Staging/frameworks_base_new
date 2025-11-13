@@ -4837,9 +4837,6 @@ public final class PowerManagerService extends SystemService
             case Mode.LAUNCH:
                 if (enabled) {
                     AxExtServiceFactory.getBoostAdjuster().boostHint("launch", 2000);
-                    Process.setThreadAffinity(ActivityManagerService.MY_PID, 0);
-                } else {
-                    Process.setThreadAffinity(ActivityManagerService.MY_PID, 2);
                 }
                 break;
             case Mode.GAME:
