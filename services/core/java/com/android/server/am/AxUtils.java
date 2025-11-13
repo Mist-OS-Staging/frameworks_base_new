@@ -65,7 +65,8 @@ public class AxUtils {
         sPerfBlackList.add("org.lineage.settings");
         sPerfBlackList.add("co.aospa.sense");
         sPerfBlackList.add("io.chaldeaprjkt.gamespace");
-        sPerfBlackList.add("com.android.edge.bar");
+        sPerfBlackList.add("com.libremobileos.sidebar");
+        sPerfBlackList.add("com.libremobileos.clock");
     }
 
     AxUtils() {
