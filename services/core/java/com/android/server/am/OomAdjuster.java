@@ -545,8 +545,17 @@ public class OomAdjuster {
                     + processName + " to " + group);
         }
         try {
+            final boolean isPerceptible = group == THREAD_GROUP_TOP_APP;
             if (AxUtils.isInPerfList(processName)) {
                 Slog.d(TAG, "set group = " + group);
+            }
+            if (AxUtils.isInPerfBlackList(processName)) {
+                final int newGroup = isPerceptible ? group : AxUtils.THREAD_GROUP_NT_FOREGROUND;
+                Process.setThreadGroupAndCpuset(pid, newGroup);
+                Process.setProcessGroup(pid, newGroup);
+                Process.setThreadAffinity(pid, isPerceptible ? 2 : 1);
+                Slog.d(TAG, "limit set group = " + group);
+                return;
             }
             if (AxUtils.isInPerfList(processName) && !AxUtils.isCamera(processName) 
                 || AxUtils.isCamera(processName) && (group == THREAD_GROUP_TOP_APP 
@@ -558,7 +567,6 @@ public class OomAdjuster {
             } else {
                 Process.setThreadGroupAndCpuset(pid, group);
                 Process.setProcessGroup(pid, group);
-                boolean isPerceptible = group == THREAD_GROUP_TOP_APP;
                 Process.setThreadAffinity(pid, isPerceptible ? 2 : 1);
             }
         } catch (Exception e) {
