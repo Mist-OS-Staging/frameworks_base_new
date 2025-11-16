@@ -41,6 +41,7 @@ import com.android.systemui.lifecycle.repeatWhenAttached
 import com.android.systemui.shade.ShadeLogger
 import com.android.systemui.shade.domain.interactor.ShadeInteractor
 import com.android.systemui.util.ViewController
+import com.android.systemui.util.time.IslamicCalendarUtil
 import com.android.systemui.util.time.BangabdaCalendarUtil
 import com.android.systemui.util.time.ChineseLunarCalendarUtil
 import com.android.systemui.util.time.IndianSakaCalendarUtil
@@ -93,6 +94,7 @@ private const val CALENDAR_TYPE_DEFAULT = "0"
 private const val CALENDAR_TYPE_LUNAR = "1"
 private const val CALENDAR_TYPE_SAKA = "2"
 private const val CALENDAR_TYPE_BANGABDA = "3"
+private const val CALENDAR_TYPE_ISLAMIC = "4"
 
 class VariableDateViewController(
     private val systemClock: SystemClock,
@@ -292,6 +294,15 @@ class VariableDateViewController(
                     BangabdaCalendarUtil.FLAG_USE_BENGALI_DIGITS
                 )
                 if (baseText.isEmpty()) bangabdaText else "$baseText $bangabdaText"
+            }
+            CALENDAR_TYPE_ISLAMIC -> {
+                val islamicText = IslamicCalendarUtil.getIslamicDateString(
+            IslamicCalendarUtil.FLAG_INCLUDE_DATE or
+            IslamicCalendarUtil.FLAG_INCLUDE_MONTH or
+            IslamicCalendarUtil.FLAG_INCLUDE_YEAR or
+            IslamicCalendarUtil.FLAG_USE_ARABIC_INDIC_DIGITS
+                )
+                if (baseText.isEmpty()) islamicText else "$baseText $islamicText"
             }
             else -> baseText
         }
