@@ -17,7 +17,7 @@ import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
-import com.android.internal.util.android.OmniJawsClient
+import com.android.internal.util.crdroid.OmniJawsClient
 import com.android.systemui.dagger.SysUISingleton
 import com.android.systemui.plugins.clocks.NTWeatherData
 import com.android.systemui.util.WeakListenerManager

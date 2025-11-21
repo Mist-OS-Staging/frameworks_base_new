@@ -15,7 +15,7 @@ package com.android.systemui.shared.clocks
 
 import android.content.Context
 import android.graphics.drawable.Drawable
-import com.android.internal.util.android.OmniJawsClient
+import com.android.internal.util.crdroid.OmniJawsClient
 
 object WeatherUtils {
 
