@@ -203,11 +203,8 @@ constructor(
                 customR.id.lockscreen_clock_view,
                 START,
                 PARENT_ID,
-                START,
-                context.resources.getDimensionPixelSize(customR.dimen.clock_padding_start) +
-                    context.resources.getDimensionPixelSize(
-                        customR.dimen.status_view_margin_horizontal
-                    ),
+                START, 
+                0,
             )
             val smallClockTopMargin = keyguardClockViewModel.getSmallClockTopMargin()
                     + context.resources.getDimensionPixelSize(R.dimen.keyguard_clock_top_margin)

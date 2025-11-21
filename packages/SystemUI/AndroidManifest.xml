@@ -424,6 +424,11 @@
     <protected-broadcast android:name="com.android.systemui.STARTED" />
     <protected-broadcast android:name="com.android.systemui.doze.pulse" />
 
+    <!-- Weather/Calendar events -->
+    <uses-permission android:name="org.omnirom.omnijaws.READ_WEATHER" />
+    <uses-permission android:name="android.permission.WRITE_CALENDAR" />
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
+
     <!-- Smartspace -->
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY"/>
     <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS_FULL"/>

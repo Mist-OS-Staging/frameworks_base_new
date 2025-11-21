@@ -1577,6 +1577,7 @@ public class ContentProviderHelper {
         if (cpi.name.contains("com.google.")) {
             return null;
         }
+        if ("com.android.systemui".equals(appName)) return null;
         boolean checkedGrants = false;
         if (checkUser) {
             // Looking for cross-user grants before enforcing the typical cross-users permissions
