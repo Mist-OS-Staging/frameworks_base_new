@@ -175,6 +175,7 @@ object KeyguardRootViewBinder {
                             view.alpha = alpha
                             childViews[burnInLayerId]?.alpha = alpha
                             childViews[sliceViewId]?.alpha = alpha
+                            childViews[widgetArea]?.alpha = alpha
                         }
                     }
 
@@ -191,6 +192,7 @@ object KeyguardRootViewBinder {
                         // need to add translation to it here same as translationX
                         viewModel.translationY.collect { y ->
                             childViews[burnInLayerId]?.translationY = y
+                            childViews[widgetArea]?.translationY = y
                             childViews[sliceViewId]?.translationY = y
                             childViews[largeClockId]?.translationY = y
                             if (com.android.systemui.shared.Flags.clockReactiveSmartspaceLayout()) {
@@ -208,6 +210,7 @@ object KeyguardRootViewBinder {
                                 state.isToOrFrom(KeyguardState.AOD) -> {
                                     // Large Clock is not translated in the x direction
                                     childViews[burnInLayerId]?.translationX = px
+                                    childViews[widgetArea]?.translationX = px
                                     childViews[sliceViewId]?.translationX = px
                                     childViews[aodPromotedNotificationId]?.translationX = px
                                     childViews[aodNotificationIconContainerId]?.translationX = px
@@ -266,6 +269,7 @@ object KeyguardRootViewBinder {
                     launch {
                         viewModel.burnInLayerVisibility.collect { visibility ->
                             childViews[burnInLayerId]?.visibility = visibility
+                            childViews[widgetArea]?.visibility = visibility
                             childViews[sliceViewId]?.visibility = visibility
                         }
                     }
@@ -610,6 +614,7 @@ object KeyguardRootViewBinder {
     private val endButton = R.id.end_button
     private val deviceEntryIcon = R.id.device_entry_icon_view
     private val nsslPlaceholderId = R.id.nssl_placeholder
+    private val widgetArea = R.id.keyguard_widgets_area
     private val authInteractionProperties = AuthInteractionProperties()
 
     private const val ID = "occluding_app_device_entry_unlock_msg"
