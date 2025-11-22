@@ -51,19 +51,6 @@ class LsWidgetsCallbacksController(private val controller: LockScreenWidgetsCont
         }
     }
 
-    val flashlightCallback = object : FlashlightController.FlashlightListener {
-        override fun onFlashlightChanged(enabled: Boolean) {
-            controller.isFlashOn = enabled
-            controller.states.updateTorch()
-        }
-        override fun onFlashlightError() {}
-        override fun onFlashlightAvailabilityChanged(available: Boolean) {
-            controller.isFlashOn =
-                controller.flashlightController.isEnabled() && available
-            controller.states.updateTorch()
-        }
-    }
-
     val ringerModeReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             controller.states.updateRinger()

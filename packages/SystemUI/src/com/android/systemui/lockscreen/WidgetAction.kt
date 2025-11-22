@@ -86,8 +86,6 @@ enum class WidgetAction(
                 it.factory.update(TORCH, it.isFlashOn)
             }
         },
-        registerCallback = { it.flashlightController.addCallback(it.callbacks.flashlightCallback) },
-        unregisterCallback = { it.flashlightController.removeCallback(it.callbacks.flashlightCallback) }
     ),
     HOTSPOT(
         onClick = onClickLambda@{
