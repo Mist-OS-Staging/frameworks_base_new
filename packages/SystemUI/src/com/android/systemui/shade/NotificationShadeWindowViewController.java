@@ -210,7 +210,8 @@ public class NotificationShadeWindowViewController implements Dumpable {
             @ShadeDisplayAware Provider<ConfigurationForwarder> configurationForwarder,
             BrightnessMirrorShowingInteractor brightnessMirrorShowingInteractor,
             @Main CoroutineDispatcher mainDispatcher,
-            QQSGestureListener qqsGestureListener) {
+            QQSGestureListener qqsGestureListener,
+            SplitNotificationPanelController splitNotificationPanelController) {
         mLockscreenShadeTransitionController = transitionController;
         mFalsingCollector = falsingCollector;
         mStatusBarStateController = statusBarStateController;
@@ -239,6 +240,9 @@ public class NotificationShadeWindowViewController implements Dumpable {
         mQuickSettingsController = quickSettingsController;
         mMainDispatcher = mainDispatcher;
         mQQSGestureListener = qqsGestureListener;
+
+        // Initialize split notification panel controller
+        mView.setSplitPanelController(splitNotificationPanelController);
 
         // This view is not part of the newly inflated expanded status bar.
         mBrightnessMirror = mView.findViewById(R.id.brightness_mirror_container);

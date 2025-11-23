@@ -77,6 +77,7 @@ public class NotificationShadeWindowView extends WindowRootView {
     @Nullable private ConfigurationForwarder mConfigurationForwarder;
 
     private InteractionEventHandler mInteractionEventHandler;
+    private SplitNotificationPanelController mSplitPanelController;
 
     private SafeCloseable mViewCaptureCloseable;
 
@@ -95,6 +96,11 @@ public class NotificationShadeWindowView extends WindowRootView {
             mViewCaptureCloseable = ViewCaptureFactory.getInstance(getContext())
                 .startCapture(getRootView(), ".NotificationShadeWindowView");
         }
+        
+        // Initialize split panel controller
+        if (mSplitPanelController != null) {
+            mSplitPanelController.init(this);
+        }
     }
 
     @Override
@@ -103,10 +109,19 @@ public class NotificationShadeWindowView extends WindowRootView {
         if (mViewCaptureCloseable != null) {
             mViewCaptureCloseable.close();
         }
+        
+        // Cleanup split panel controller
+        if (mSplitPanelController != null) {
+            mSplitPanelController.destroy();
+        }
     }
 
     protected void setInteractionEventHandler(InteractionEventHandler listener) {
         mInteractionEventHandler = listener;
+    }
+    
+    public void setSplitPanelController(SplitNotificationPanelController controller) {
+        mSplitPanelController = controller;
     }
 
     @Override
