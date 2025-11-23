@@ -20,15 +20,17 @@ import android.content.Context;
 import android.os.Handler;
 
 import com.android.systemui.dagger.SysUISingleton;
+import com.android.systemui.dagger.qualifiers.Background;
 import com.android.systemui.dagger.qualifiers.Main;
+import com.android.systemui.statusbar.BlurUtils;
 
 import dagger.Module;
 import dagger.Provides;
 
-import javax.inject.Inject;
+import java.util.concurrent.Executor;
 
 /**
- * Dagger module for split notification panel dependencies
+ * Production-ready Dagger module for split notification panel dependencies
  */
 @Module
 public class SplitNotificationPanelModule {
@@ -37,7 +39,9 @@ public class SplitNotificationPanelModule {
     @SysUISingleton
     static SplitNotificationPanelController provideSplitNotificationPanelController(
             Context context,
-            @Main Handler mainHandler) {
-        return new SplitNotificationPanelController(context, mainHandler);
+            @Main Handler mainHandler,
+            @Background Executor backgroundExecutor,
+            BlurUtils blurUtils) {
+        return new SplitNotificationPanelController(context, mainHandler, backgroundExecutor, blurUtils);
     }
 }

@@ -123,6 +123,7 @@ import com.android.systemui.security.data.repository.SecurityRepositoryModule;
 import com.android.systemui.settings.UserTracker;
 import com.android.systemui.shade.ShadeController;
 import com.android.systemui.shade.ShadeDisplayAwareModule;
+import com.android.systemui.shade.SplitNotificationPanelModule;
 import com.android.systemui.shade.transition.LargeScreenShadeInterpolator;
 import com.android.systemui.shade.transition.LargeScreenShadeInterpolatorImpl;
 import com.android.systemui.shared.condition.Monitor;
@@ -280,6 +281,7 @@ import javax.inject.Named;
         SecurityRepositoryModule.class,
         ScreenRecordModule.class,
         SettingsUtilModule.class,
+        SplitNotificationPanelModule.class,
         SmartRepliesInflationModule.class,
         SmartspaceModule.class,
         StatusBarEventsModule.class,

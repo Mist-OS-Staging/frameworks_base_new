@@ -57,7 +57,9 @@ import com.android.internal.view.FloatingActionMode;
 import com.android.internal.widget.floatingtoolbar.FloatingToolbar;
 import com.android.systemui.Flags;
 import com.android.systemui.scene.ui.view.WindowRootView;
+import com.android.systemui.shade.SplitNotificationPanelController;
 import com.android.systemui.shade.shared.flag.ShadeWindowGoesAround;
+
 import com.android.systemui.statusbar.phone.ConfigurationForwarder;
 
 /**

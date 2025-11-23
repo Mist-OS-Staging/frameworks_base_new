@@ -7516,4 +7516,10 @@
     <!-- Name of a font family to use as regular font. For theming purpose. -->
     <string name="config_regularFontFamily" translatable="false">sans-serif-regular</string>
 
+    <!-- Whether the device supports split notification panel -->
+    <bool name="config_enableSplitNotificationPanel">true</bool>
+
+    <!-- Default split ratio for notification panel (0.6 = 60% for notifications, 40% for QS) -->
+    <fraction name="config_splitNotificationPanelRatio">60%</fraction>
+
 </resources>
