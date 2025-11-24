@@ -151,6 +151,7 @@ public class SplitNotificationPanelController {
                         if (mSplitPanelEnabled != userEnabled) {
                             mSplitPanelEnabled = userEnabled;
                             applySplitPanelLayout();
+                            SplitNotificationBroadcaster.notifyLauncher(mContext, userEnabled);
                         }
                     }
                 });
