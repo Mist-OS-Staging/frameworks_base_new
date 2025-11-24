@@ -92,6 +92,9 @@ public class SplitNotificationPanelController {
             mShadeWindowView = shadeWindowView;
             
             try {
+                // Ensure QS panel has correct initial height
+                ensureQsPanelHeight();
+                
                 mContentResolver.registerContentObserver(
                         Settings.System.getUriFor(SPLIT_NOTIFICATION_PANEL_SETTING),
                         false, mSettingsObserver);
@@ -103,6 +106,29 @@ public class SplitNotificationPanelController {
             } catch (Exception e) {
                 Log.e(TAG, "Failed to initialize split panel controller", e);
             }
+        }
+    }
+    
+    private void ensureQsPanelHeight() {
+        try {
+            View qsContainer = mShadeWindowView.findViewById(
+                    mContext.getResources().getIdentifier("qs_frame", "id", "com.android.systemui"));
+            
+            if (qsContainer != null) {
+                // Reset QS panel to proper height
+                ViewGroup.LayoutParams params = qsContainer.getLayoutParams();
+                if (params != null) {
+                    params.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+                    qsContainer.setLayoutParams(params);
+                }
+                
+                // Reset padding and margins
+                qsContainer.setPadding(0, 0, 0, 0);
+                
+                Log.d(TAG, "QS panel height reset to normal");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to reset QS panel height", e);
         }
     }
     
@@ -203,10 +229,6 @@ public class SplitNotificationPanelController {
         }
         
         try {
-            // Use hardcoded 60/40 split ratio
-            float notificationRatio = 0.6f;
-            float qsRatio = 0.4f;
-            
             // Create split container with blur background
             SplitNotificationContainer splitContainer = new SplitNotificationContainer(mContext, mBlurUtils);
             splitContainer.setOrientation(LinearLayout.HORIZONTAL);
@@ -218,6 +240,25 @@ public class SplitNotificationPanelController {
             // Store original layout params
             ViewGroup.LayoutParams originalNotificationParams = notificationStack.getLayoutParams();
             ViewGroup.LayoutParams originalQsParams = qsContainer.getLayoutParams();
+            
+            // Remove views from original parent
+            parent.removeView(notificationStack);
+            parent.removeView(qsContainer);
+            
+            // Create new layout params for split panels with MATCH_PARENT to avoid constraints
+            LinearLayout.LayoutParams leftParams = new LinearLayout.LayoutParams(
+                    0, ViewGroup.LayoutParams.MATCH_PARENT, 0.6f);
+            LinearLayout.LayoutParams rightParams = new LinearLayout.LayoutParams(
+                    0, ViewGroup.LayoutParams.MATCH_PARENT, 0.4f);
+            
+            // Add views to split container
+            splitContainer.addView(notificationStack, leftParams);
+            splitContainer.addView(qsContainer, rightParams);
+            
+            // Add split container to parent
+            parent.addView(splitContainer);
+            
+            Log.d(TAG, "Split layout enabled successfully");
             
             // Remove views from parent
             parent.removeView(notificationStack);
@@ -272,26 +313,32 @@ public class SplitNotificationPanelController {
             View notificationStack = container.getChildAt(0);
             View qsContainer = container.getChildAt(1);
             
-            // Get original layout params from stored array
-            ViewGroup.LayoutParams originalNotificationParams = null;
-            ViewGroup.LayoutParams originalQsParams = null;
-            
-            Object tag = container.getTag();
-            if (tag instanceof ViewGroup.LayoutParams[]) {
-                ViewGroup.LayoutParams[] params = (ViewGroup.LayoutParams[]) tag;
-                if (params.length >= 2) {
-                    originalNotificationParams = params[0];
-                    originalQsParams = params[1];
-                }
-            }
-            
             // Remove from split container
             container.removeAllViews();
             parent.removeView(container);
             
-            // Restore original layout params
-            if (originalNotificationParams != null) {
-                notificationStack.setLayoutParams(originalNotificationParams);
+            // Restore original layout params with proper QS height
+            ViewGroup.LayoutParams notificationParams = new ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT);
+            
+            ViewGroup.LayoutParams qsParams = new ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT);
+            
+            notificationStack.setLayoutParams(notificationParams);
+            qsContainer.setLayoutParams(qsParams);
+            
+            // Reset any padding/margins that might affect height
+            qsContainer.setPadding(0, 0, 0, 0);
+            if (qsContainer instanceof ViewGroup) {
+                ViewGroup qsGroup = (ViewGroup) qsContainer;
+                ViewGroup.MarginLayoutParams marginParams = 
+                    (ViewGroup.MarginLayoutParams) qsGroup.getLayoutParams();
+                if (marginParams != null) {
+                    marginParams.topMargin = 0;
+                    marginParams.bottomMargin = 0;
+                }
             }
             if (originalQsParams != null) {
                 qsContainer.setLayoutParams(originalQsParams);

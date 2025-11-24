@@ -124,6 +124,63 @@ public class SplitNotificationContainer extends LinearLayout {
         }
     }
     
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        try {
+            int width = MeasureSpec.getSize(widthMeasureSpec);
+            int height = MeasureSpec.getSize(heightMeasureSpec);
+            
+            if (getChildCount() >= 2) {
+                View leftPanel = getChildAt(0);
+                View rightPanel = getChildAt(1);
+                
+                // Calculate split widths
+                int leftWidth = (int) (width * 0.6f); // 60% for notifications
+                int rightWidth = width - leftWidth;   // 40% for QS
+                
+                // Measure children with EXACTLY constraints to avoid Compose issues
+                int leftWidthSpec = MeasureSpec.makeMeasureSpec(leftWidth, MeasureSpec.EXACTLY);
+                int rightWidthSpec = MeasureSpec.makeMeasureSpec(rightWidth, MeasureSpec.EXACTLY);
+                int heightSpec = MeasureSpec.makeMeasureSpec(height, MeasureSpec.AT_MOST);
+                
+                leftPanel.measure(leftWidthSpec, heightSpec);
+                rightPanel.measure(rightWidthSpec, heightSpec);
+                
+                // Set our own dimensions
+                setMeasuredDimension(width, height);
+            } else {
+                super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error in onMeasure", e);
+            super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        }
+    }
+    
+    @Override
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        try {
+            if (getChildCount() >= 2) {
+                View leftPanel = getChildAt(0);
+                View rightPanel = getChildAt(1);
+                
+                int width = right - left;
+                int leftWidth = (int) (width * 0.6f);
+                
+                // Layout left panel (notifications)
+                leftPanel.layout(0, 0, leftWidth, bottom - top);
+                
+                // Layout right panel (QS) 
+                rightPanel.layout(leftWidth, 0, width, bottom - top);
+            } else {
+                super.onLayout(changed, left, top, right, bottom);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error in onLayout", e);
+            super.onLayout(changed, left, top, right, bottom);
+        }
+    }
+
     private void drawPanelBackgrounds(@NonNull Canvas canvas) {
         try {
             View leftPanel = getChildAt(0);
