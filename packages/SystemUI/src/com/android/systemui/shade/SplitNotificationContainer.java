@@ -50,6 +50,7 @@ public class SplitNotificationContainer extends LinearLayout {
     private boolean mIsTouchingLeftPanel;
     private int mDividerWidth;
     private int mPanelCornerRadius;
+    private boolean mComposeErrorDetected = false;
 
     public SplitNotificationContainer(@NonNull Context context, @NonNull BlurUtils blurUtils) {
         super(context);
@@ -115,6 +116,29 @@ public class SplitNotificationContainer extends LinearLayout {
     }
 
     @Override
+    protected void dispatchDraw(@NonNull Canvas canvas) {
+        try {
+            super.dispatchDraw(canvas);
+        } catch (IllegalStateException e) {
+            if (e.getMessage() != null && e.getMessage().contains("Width must be constrained")) {
+                Log.e(TAG, "Compose constraint error caught, forcing remeasure", e);
+                // Force a proper remeasure with valid constraints
+                post(() -> {
+                    try {
+                        requestLayout();
+                    } catch (Exception remeasureError) {
+                        Log.e(TAG, "Remeasure failed", remeasureError);
+                    }
+                });
+            } else {
+                throw e;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error in dispatchDraw", e);
+        }
+    }
+
+    @Override
     protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
         
@@ -127,21 +151,44 @@ public class SplitNotificationContainer extends LinearLayout {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         try {
+            // If Compose errors detected, use simple vertical layout
+            if (mComposeErrorDetected) {
+                Log.w(TAG, "Using fallback layout due to Compose errors");
+                setOrientation(VERTICAL);
+                super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+                return;
+            }
+            
             int width = MeasureSpec.getSize(widthMeasureSpec);
             int height = MeasureSpec.getSize(heightMeasureSpec);
+            
+            // Validate dimensions to prevent Compose crashes
+            if (width <= 0 || height <= 0) {
+                Log.w(TAG, "Invalid dimensions: " + width + "x" + height + ", using fallback");
+                super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+                return;
+            }
             
             if (getChildCount() >= 2) {
                 View leftPanel = getChildAt(0);
                 View rightPanel = getChildAt(1);
                 
-                // Calculate split widths
-                int leftWidth = (int) (width * 0.6f); // 60% for notifications
-                int rightWidth = width - leftWidth;   // 40% for QS
+                // Calculate split widths with minimum constraints
+                int leftWidth = Math.max(1, (int) (width * 0.6f)); // 60% for notifications
+                int rightWidth = Math.max(1, width - leftWidth);   // 40% for QS
                 
-                // Measure children with EXACTLY constraints to avoid Compose issues
+                // Ensure minimum dimensions for Compose compatibility
+                leftWidth = Math.max(leftWidth, 100);
+                rightWidth = Math.max(rightWidth, 100);
+                height = Math.max(height, 100);
+                
+                // Create EXACTLY constrained specs for both dimensions
                 int leftWidthSpec = MeasureSpec.makeMeasureSpec(leftWidth, MeasureSpec.EXACTLY);
                 int rightWidthSpec = MeasureSpec.makeMeasureSpec(rightWidth, MeasureSpec.EXACTLY);
-                int heightSpec = MeasureSpec.makeMeasureSpec(height, MeasureSpec.AT_MOST);
+                int heightSpec = MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY);
+                
+                Log.d(TAG, "Measuring panels: left=" + leftWidth + "x" + height + 
+                          ", right=" + rightWidth + "x" + height);
                 
                 leftPanel.measure(leftWidthSpec, heightSpec);
                 rightPanel.measure(rightWidthSpec, heightSpec);
@@ -151,9 +198,27 @@ public class SplitNotificationContainer extends LinearLayout {
             } else {
                 super.onMeasure(widthMeasureSpec, heightMeasureSpec);
             }
+        } catch (IllegalStateException e) {
+            if (e.getMessage() != null && e.getMessage().contains("Width must be constrained")) {
+                Log.e(TAG, "Compose constraint error detected, switching to fallback mode", e);
+                mComposeErrorDetected = true;
+                setOrientation(VERTICAL);
+                super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+            } else {
+                throw e;
+            }
         } catch (Exception e) {
             Log.e(TAG, "Error in onMeasure", e);
-            super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+            // Force fallback measurement to prevent crashes
+            try {
+                super.onMeasure(
+                    MeasureSpec.makeMeasureSpec(1080, MeasureSpec.EXACTLY),
+                    MeasureSpec.makeMeasureSpec(1920, MeasureSpec.EXACTLY)
+                );
+            } catch (Exception fallbackError) {
+                Log.e(TAG, "Fallback measurement failed", fallbackError);
+                setMeasuredDimension(1080, 1920);
+            }
         }
     }
     

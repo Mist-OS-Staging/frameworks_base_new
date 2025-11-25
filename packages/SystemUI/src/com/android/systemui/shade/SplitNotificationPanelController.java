@@ -237,10 +237,6 @@ public class SplitNotificationPanelController {
                     ViewGroup.LayoutParams.MATCH_PARENT));
             splitContainer.setTag(SPLIT_CONTAINER_TAG);
             
-            // Store original layout params
-            ViewGroup.LayoutParams originalNotificationParams = notificationStack.getLayoutParams();
-            ViewGroup.LayoutParams originalQsParams = qsContainer.getLayoutParams();
-            
             // Remove views from original parent
             parent.removeView(notificationStack);
             parent.removeView(qsContainer);
@@ -256,35 +252,6 @@ public class SplitNotificationPanelController {
             splitContainer.addView(qsContainer, rightParams);
             
             // Add split container to parent
-            parent.addView(splitContainer);
-            
-            Log.d(TAG, "Split layout enabled successfully");
-            
-            // Remove views from parent
-            parent.removeView(notificationStack);
-            parent.removeView(qsContainer);
-            
-            // Set up notification panel (left side)
-            LinearLayout.LayoutParams notificationParams = new LinearLayout.LayoutParams(
-                    0, ViewGroup.LayoutParams.MATCH_PARENT, notificationRatio);
-            int margin = (int) (4 * mContext.getResources().getDisplayMetrics().density); // 4dp
-            notificationParams.setMarginEnd(margin);
-            notificationStack.setLayoutParams(notificationParams);
-            
-            // Set up QS panel (right side)
-            LinearLayout.LayoutParams qsParams = new LinearLayout.LayoutParams(
-                    0, ViewGroup.LayoutParams.MATCH_PARENT, qsRatio);
-            qsParams.setMarginStart(margin);
-            qsContainer.setLayoutParams(qsParams);
-            
-            // Add to split container
-            splitContainer.addView(notificationStack);
-            splitContainer.addView(qsContainer);
-            
-            // Store original params in a simple way - use the container's tag to store both params
-            splitContainer.setTag(new ViewGroup.LayoutParams[]{originalNotificationParams, originalQsParams});
-            
-            // Add to parent
             parent.addView(splitContainer);
             
             Log.d(TAG, "Split layout enabled successfully");
@@ -339,9 +306,6 @@ public class SplitNotificationPanelController {
                     marginParams.topMargin = 0;
                     marginParams.bottomMargin = 0;
                 }
-            }
-            if (originalQsParams != null) {
-                qsContainer.setLayoutParams(originalQsParams);
             }
             
             // Add back to parent in original order
