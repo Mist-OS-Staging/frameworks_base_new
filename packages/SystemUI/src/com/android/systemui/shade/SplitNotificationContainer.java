@@ -151,11 +151,10 @@ public class SplitNotificationContainer extends LinearLayout {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         try {
-            // If Compose errors detected, use simple vertical layout
+            // If Compose errors detected, disable split mode entirely
             if (mComposeErrorDetected) {
-                Log.w(TAG, "Using fallback layout due to Compose errors");
-                setOrientation(VERTICAL);
-                super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+                Log.w(TAG, "Compose errors detected - disabling split mode");
+                disableSplitMode();
                 return;
             }
             
@@ -164,8 +163,8 @@ public class SplitNotificationContainer extends LinearLayout {
             
             // Validate dimensions to prevent Compose crashes
             if (width <= 0 || height <= 0) {
-                Log.w(TAG, "Invalid dimensions: " + width + "x" + height + ", using fallback");
-                super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+                Log.w(TAG, "Invalid dimensions: " + width + "x" + height + ", disabling split mode");
+                disableSplitMode();
                 return;
             }
             
@@ -174,13 +173,11 @@ public class SplitNotificationContainer extends LinearLayout {
                 View rightPanel = getChildAt(1);
                 
                 // Calculate split widths with minimum constraints
-                int leftWidth = Math.max(1, (int) (width * 0.6f)); // 60% for notifications
-                int rightWidth = Math.max(1, width - leftWidth);   // 40% for QS
+                int leftWidth = Math.max(200, (int) (width * 0.6f)); // 60% for notifications, min 200px
+                int rightWidth = Math.max(200, width - leftWidth);   // 40% for QS, min 200px
                 
-                // Ensure minimum dimensions for Compose compatibility
-                leftWidth = Math.max(leftWidth, 100);
-                rightWidth = Math.max(rightWidth, 100);
-                height = Math.max(height, 100);
+                // Ensure dimensions are reasonable for Compose
+                height = Math.max(height, 400); // Minimum height
                 
                 // Create EXACTLY constrained specs for both dimensions
                 int leftWidthSpec = MeasureSpec.makeMeasureSpec(leftWidth, MeasureSpec.EXACTLY);
@@ -200,25 +197,40 @@ public class SplitNotificationContainer extends LinearLayout {
             }
         } catch (IllegalStateException e) {
             if (e.getMessage() != null && e.getMessage().contains("Width must be constrained")) {
-                Log.e(TAG, "Compose constraint error detected, switching to fallback mode", e);
+                Log.e(TAG, "Compose constraint error detected, disabling split mode", e);
                 mComposeErrorDetected = true;
-                setOrientation(VERTICAL);
-                super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+                disableSplitMode();
             } else {
                 throw e;
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error in onMeasure", e);
-            // Force fallback measurement to prevent crashes
-            try {
-                super.onMeasure(
-                    MeasureSpec.makeMeasureSpec(1080, MeasureSpec.EXACTLY),
-                    MeasureSpec.makeMeasureSpec(1920, MeasureSpec.EXACTLY)
-                );
-            } catch (Exception fallbackError) {
-                Log.e(TAG, "Fallback measurement failed", fallbackError);
-                setMeasuredDimension(1080, 1920);
-            }
+            Log.e(TAG, "Error in onMeasure, disabling split mode", e);
+            mComposeErrorDetected = true;
+            disableSplitMode();
+        }
+    }
+    
+    private void disableSplitMode() {
+        try {
+            // Disable split notification setting
+            android.provider.Settings.System.putInt(
+                getContext().getContentResolver(), 
+                "split_notification_panel", 
+                0
+            );
+            
+            // Post a message to restart SystemUI to clean up the state
+            post(() -> {
+                try {
+                    android.os.Process.killProcess(android.os.Process.myPid());
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to restart SystemUI", e);
+                }
+            });
+            
+            Log.w(TAG, "Split mode disabled due to Compose compatibility issues");
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to disable split mode", e);
         }
     }
     

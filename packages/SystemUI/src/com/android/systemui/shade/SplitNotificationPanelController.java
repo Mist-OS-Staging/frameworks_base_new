@@ -229,34 +229,43 @@ public class SplitNotificationPanelController {
         }
         
         try {
-            // Create split container with blur background
+            // Get screen dimensions for finite constraints
+            int screenWidth = mContext.getResources().getDisplayMetrics().widthPixels;
+            int screenHeight = mContext.getResources().getDisplayMetrics().heightPixels;
+            
+            // Create split container with finite dimensions
             SplitNotificationContainer splitContainer = new SplitNotificationContainer(mContext, mBlurUtils);
             splitContainer.setOrientation(LinearLayout.HORIZONTAL);
-            splitContainer.setLayoutParams(new ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT));
+            splitContainer.setLayoutParams(new ViewGroup.LayoutParams(screenWidth, screenHeight));
             splitContainer.setTag(SPLIT_CONTAINER_TAG);
             
             // Remove views from original parent
             parent.removeView(notificationStack);
             parent.removeView(qsContainer);
             
-            // Create new layout params for split panels with MATCH_PARENT to avoid constraints
+            // Create finite layout params for split panels
+            int leftWidth = (int) (screenWidth * 0.6f);
+            int rightWidth = screenWidth - leftWidth;
+            
             LinearLayout.LayoutParams leftParams = new LinearLayout.LayoutParams(
-                    0, ViewGroup.LayoutParams.MATCH_PARENT, 0.6f);
+                    leftWidth, screenHeight);
             LinearLayout.LayoutParams rightParams = new LinearLayout.LayoutParams(
-                    0, ViewGroup.LayoutParams.MATCH_PARENT, 0.4f);
+                    rightWidth, screenHeight);
             
             // Add views to split container
             splitContainer.addView(notificationStack, leftParams);
             splitContainer.addView(qsContainer, rightParams);
             
-            // Add split container to parent
-            parent.addView(splitContainer);
+            // Add split container to parent with finite constraints
+            ViewGroup.LayoutParams containerParams = new ViewGroup.LayoutParams(screenWidth, screenHeight);
+            parent.addView(splitContainer, containerParams);
             
-            Log.d(TAG, "Split layout enabled successfully");
+            Log.d(TAG, "Split layout enabled with finite constraints: " + screenWidth + "x" + screenHeight);
         } catch (Exception e) {
             Log.e(TAG, "Error enabling split layout", e);
+            // Fallback: disable split mode if it fails
+            mSplitPanelEnabled = false;
+            Settings.System.putInt(mContentResolver, SPLIT_NOTIFICATION_PANEL_SETTING, 0);
         }
     }
     
