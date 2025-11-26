@@ -18,7 +18,6 @@
 package com.android.systemui.keyguard.ui.view.layout.blueprints
 
 import android.util.Log
-import com.android.systemui.communal.ui.view.layout.sections.CommunalTutorialIndicatorSection
 import com.android.systemui.dagger.SysUISingleton
 import com.android.systemui.keyguard.shared.model.KeyguardBlueprint
 import com.android.systemui.keyguard.shared.model.KeyguardSection
@@ -90,17 +89,14 @@ constructor(
                     defaultShortcutsSection,
                     defaultAmbientIndicationAreaSection.getOrNull(),
                     defaultSettingsPopupMenuSection,
-                    defaultStatusViewSection,
                     defaultStatusBarSection,
                     defaultNotificationStackScrollLayoutSection,
                     aodNotificationIconsSection,
                     smartspaceSection,
                     aodBurnInSection,
-                    communalTutorialIndicatorSection,
                     clockSection,
                     keyguardSliceViewSection,
                     defaultDeviceEntrySection,
-                    aodPromotedNotificationSection,
                     udfpsAccessibilityOverlaySection, // Add LAST: Intentionally has z-order above others
                 )
 
