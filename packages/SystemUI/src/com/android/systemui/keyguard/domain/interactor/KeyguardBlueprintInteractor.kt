@@ -38,6 +38,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
+import org.mist.systemui.lockscreen.CustomLockscreenRepository
+import android.util.Log
+import kotlinx.coroutines.flow.first
+import org.mist.systemui.lockscreen.CustomLockscreenClockManager
 
 @SysUISingleton
 class KeyguardBlueprintInteractor
@@ -49,6 +53,8 @@ constructor(
     @ShadeDisplayAware private val configurationInteractor: ConfigurationInteractor,
     private val fingerprintPropertyInteractor: FingerprintPropertyInteractor,
     private val smartspaceSection: SmartspaceSection,
+    private val customLockscreenRepository: CustomLockscreenRepository,
+    private val customLockscreenClockManager: CustomLockscreenClockManager,
 ) : CoreStartable {
     /** The current blueprint for the lockscreen. */
     val blueprint: StateFlow<KeyguardBlueprint> = keyguardBlueprintRepository.blueprint
@@ -81,6 +87,17 @@ constructor(
                 Config(Type.NoTransition, rebuildSections = listOf(smartspaceSection))
             configurationInteractor.onAnyConfigurationChange.collect {
                 refreshBlueprint(refreshConfig)
+            }
+        }
+
+        applicationScope.launch("MistLockscreenWatcher") {
+            var isInitialState = true
+            customLockscreenRepository.isEnabled.collect { isEnabled ->
+                if (isInitialState) {
+                    isInitialState = false
+                    return@collect
+                }
+                customLockscreenClockManager.restartSystemUI()
             }
         }
     }
