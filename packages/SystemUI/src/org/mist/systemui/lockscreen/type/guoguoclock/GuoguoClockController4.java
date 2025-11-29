@@ -11,13 +11,13 @@ import androidx.constraintlayout.widget.ConstraintSet;
 
 //import org.mist.test.R;
 import com.android.systemui.res.R;
+
 import org.mist.systemui.lockscreen.util.BaseLockscreenController;
 import org.mist.systemui.lockscreen.util.DigitalClockDisplayManager;
 import org.mist.systemui.lockscreen.util.GlassClockManager;
 import org.mist.systemui.lockscreen.util.LockscreenClockUtils;
 import org.mist.systemui.lockscreen.util.LockscreenLayoutManager;
 import org.mist.systemui.lockscreen.util.CustomLockscreenSettings;
-import android.view.ViewGroup;
 
 import java.util.Locale;
 
@@ -47,7 +47,7 @@ public class GuoguoClockController4 extends BaseLockscreenController {
     @Override
     public View getView(Context context) {
         mContext = context;
-        mUseBlurEffect = mContext.getString(R.string.guoguo_blur_effect).equalsIgnoreCase(CustomLockscreenSettings.getClockColor().trim());
+        mUseBlurEffect =  "blur".equalsIgnoreCase(CustomLockscreenSettings.getClockColor().trim());
         createViews();
         mLayoutManager = new LockscreenLayoutManager(mContainer);
         setupLayout();
@@ -65,8 +65,8 @@ public class GuoguoClockController4 extends BaseLockscreenController {
         mDateView = new TextView(mContext);
         mDateView.setId(View.generateViewId());
         mDateView.setTextColor(Color.WHITE);
-        mDateView.setTextSize(22f);
-        mDateView.getPaint().setFakeBoldText(true);
+        mDateView.setTextSize(16f);
+        mDateView.getPaint().setShadowLayer(5, 0, 0, Color.BLACK);
         mContainer.addView(mDateView);
 
         Drawable sampleDigitDrawable = mContext.getResources().getDrawable(mDigitResources[0], mContext.getTheme());
@@ -77,30 +77,20 @@ public class GuoguoClockController4 extends BaseLockscreenController {
         int scaledDotWidth = (int) (dotDrawable.getIntrinsicWidth() * SCALE_FACTOR);
         int scaledDotHeight = (int) (dotDrawable.getIntrinsicHeight() * SCALE_FACTOR);
 
+        mDotView = createImageView();
+        mDotView.setLayoutParams(new ConstraintLayout.LayoutParams(scaledDotWidth, scaledDotHeight));
+        mDotView.setImageResource(mDotResource);
+        mContainer.addView(mDotView);
+
         if (mUseBlurEffect) {
             mGlassClockManager = new GlassClockManager(mContext, 4, mDigitResources);
-            mGlassClockManager.setDotResource(mDotResource);
             View[] digitViews = mGlassClockManager.getDigitViews();
             for (View iv : digitViews) {
                 iv.setId(View.generateViewId());
                 iv.setLayoutParams(new ConstraintLayout.LayoutParams(scaledDigitWidth, scaledDigitHeight));
                 iv.setAlpha(0.99f);
-
-                if (iv.getParent() != null) {
-                    ((ViewGroup) iv.getParent()).removeView(iv);
-                }
                 mContainer.addView(iv);
             }
-            
-            View dotView = mGlassClockManager.getDotView();
-            dotView.setId(View.generateViewId());
-            dotView.setLayoutParams(new ConstraintLayout.LayoutParams(scaledDotWidth, scaledDotHeight));
-            dotView.setAlpha(0.99f);
-
-            if (dotView.getParent() != null) {
-                ((ViewGroup) dotView.getParent()).removeView(dotView);
-            }
-            mContainer.addView(dotView);
         } else {
             mHour1 = createImageView();
             mHour2 = createImageView();
@@ -111,12 +101,6 @@ public class GuoguoClockController4 extends BaseLockscreenController {
                 iv.setLayoutParams(new ConstraintLayout.LayoutParams(scaledDigitWidth, scaledDigitHeight));
                 mContainer.addView(iv);
             }
-            
-            mDotView = createImageView();
-            mDotView.setLayoutParams(new ConstraintLayout.LayoutParams(scaledDotWidth, scaledDotHeight));
-            mDotView.setImageResource(mDotResource);
-            mContainer.addView(mDotView);
-            
             mDigitalClockDisplayManager = new DigitalClockDisplayManager(mDigitViews, mDigitResources);
         }
     }
@@ -131,14 +115,10 @@ public class GuoguoClockController4 extends BaseLockscreenController {
     private void setupLayout() {
         ConstraintSet cs = mLayoutManager.getConstraintSet();
         View[] digitViews;
-        View dotView;
-        
         if (mUseBlurEffect) {
             digitViews = mGlassClockManager.getDigitViews();
-            dotView = mGlassClockManager.getDotView();
         } else {
             digitViews = mDigitViews;
-            dotView = mDotView;
         }
 
         int dateId = mDateView.getId();
@@ -147,7 +127,7 @@ public class GuoguoClockController4 extends BaseLockscreenController {
 
         int[] clockChainIds = {
                 digitViews[0].getId(), digitViews[1].getId(),
-                dotView.getId(),
+                mDotView.getId(),
                 digitViews[2].getId(), digitViews[3].getId()
         };
 
@@ -157,7 +137,7 @@ public class GuoguoClockController4 extends BaseLockscreenController {
                 clockChainIds, null, ConstraintSet.CHAIN_PACKED
         );
 
-        cs.connect(clockChainIds[0], ConstraintSet.TOP, dateId, ConstraintSet.BOTTOM, dpToPx(32));
+        cs.connect(clockChainIds[0], ConstraintSet.TOP, dateId, ConstraintSet.BOTTOM, dpToPx(12));
 
         for (int id : clockChainIds) {
             cs.connect(id, ConstraintSet.TOP, clockChainIds[0], ConstraintSet.TOP);
@@ -177,8 +157,8 @@ public class GuoguoClockController4 extends BaseLockscreenController {
 
     @Override
     public void onTimeTick() {
-        mDateView.setText(LockscreenClockUtils.getCurrentTimeString(mContext.getString(R.string.guoguo_date_format), Locale.CHINESE));
-        String timeString = LockscreenClockUtils.getCurrentTimeString(mContext.getString(R.string.guoguo_time_format));
+        mDateView.setText(LockscreenClockUtils.getCurrentTimeString("M月d日 EEEE", Locale.CHINESE));
+        String timeString = LockscreenClockUtils.getCurrentTimeString("HHmm");
         if (mUseBlurEffect) {
             mGlassClockManager.updateTime(timeString);
         } else {

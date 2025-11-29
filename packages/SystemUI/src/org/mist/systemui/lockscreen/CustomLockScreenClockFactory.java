@@ -55,22 +55,16 @@ public class CustomLockScreenClockFactory {
                 return new GuoguoClockController();
             case 12:
                 return new GuoguoClockController2();
-
             case 13:
                 return new GuoguoClockController3();
-
             case 14:
                 return new GuoguoClockController4();
-
             case 15:
                 return new GuoguoClockController5();
-
             case 16:
                 return new GuoguoClockController6();
-
             case 17:
                 return new GuoguoClockController7();
-
             case 18:
                 return new MediaBlurClockController();
             default:
