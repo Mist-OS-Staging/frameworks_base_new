@@ -46,7 +46,7 @@ public class SmallCuteClockController extends BaseLockscreenController {
     @Override
     public View getView(Context context) {
         mContext = context;
-        mUseBlurEffect = "blur".equalsIgnoreCase(CustomLockscreenSettings.getClockColor().trim());
+        mUseBlurEffect = "blur".equalsIgnoreCase(CustomLockscreenSettings.getClockColor(mContext).trim());
 
         createViews();
         mLayoutManager = new LockscreenLayoutManager(mContainer);
@@ -91,7 +91,7 @@ public class SmallCuteClockController extends BaseLockscreenController {
             for (ImageView iv : mDigitViews) {
                 mContainer.addView(iv);
             }
-            mDigitalClockDisplayManager = new DigitalClockDisplayManager(mDigitViews, mDigitResources);
+            mDigitalClockDisplayManager = new DigitalClockDisplayManager(mContext, mDigitViews, mDigitResources);
         }
     }
 
@@ -151,7 +151,7 @@ public class SmallCuteClockController extends BaseLockscreenController {
     @Override
     public void applyStyles() {
         if (!mUseBlurEffect) {
-            int hourColor = LockscreenClockUtils.parseColor(CustomLockscreenSettings.getHourColor());
+            int hourColor = LockscreenClockUtils.parseColor(CustomLockscreenSettings.getHourColor(mContext));
             mDateView.setTextColor(hourColor);
 
             ImageView[] hourViews = {mHour1, mHour2};

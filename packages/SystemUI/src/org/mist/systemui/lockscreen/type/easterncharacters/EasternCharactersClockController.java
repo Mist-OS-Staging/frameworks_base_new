@@ -202,8 +202,8 @@ public class EasternCharactersClockController extends BaseLockscreenController {
 
     @Override
     public void applyStyles() {
-        int hourColor = LockscreenClockUtils.parseColor(CustomLockscreenSettings.getHourColor());
-        int minuteColor = LockscreenClockUtils.parseColor(CustomLockscreenSettings.getMinuteColor());
+        int hourColor = LockscreenClockUtils.parseColor(CustomLockscreenSettings.getHourColor(mContext));
+        int minuteColor = LockscreenClockUtils.parseColor(CustomLockscreenSettings.getMinuteColor(mContext));
 
         mHourChar1.setTextColor(hourColor);
         mHourChar2.setTextColor(hourColor);

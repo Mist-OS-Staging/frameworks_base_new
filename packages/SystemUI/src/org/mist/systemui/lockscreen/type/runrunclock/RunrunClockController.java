@@ -44,7 +44,7 @@ public class RunrunClockController extends BaseLockscreenController {
     public View getView(Context context) {
         mContext = context;
         mUseBlurEffect = mContext.getString(R.string.runrun_blur_effect).equalsIgnoreCase(
-            CustomLockscreenSettings.getClockColor().trim());
+            CustomLockscreenSettings.getClockColor(mContext).trim());
         createViews();
         setupLayout();
         if (mUseBlurEffect) {
@@ -94,7 +94,7 @@ public class RunrunClockController extends BaseLockscreenController {
             mInnerContainer.addView(mMinute2);
 
             ImageView[] digitViews = {mHour1, mHour2, mMinute1, mMinute2};
-            mDigitalClockDisplayManager = new DigitalClockDisplayManager(digitViews, mDigitResources);
+            mDigitalClockDisplayManager = new DigitalClockDisplayManager(mContext, digitViews, mDigitResources);
         }
     }
 
@@ -182,8 +182,8 @@ public class RunrunClockController extends BaseLockscreenController {
     @Override
     public void applyStyles() {
         if (!mUseBlurEffect) {
-            int hourColor = LockscreenClockUtils.parseColor(CustomLockscreenSettings.getHourColor());
-            int minuteColor = LockscreenClockUtils.parseColor(CustomLockscreenSettings.getMinuteColor());
+            int hourColor = LockscreenClockUtils.parseColor(CustomLockscreenSettings.getHourColor(mContext));
+            int minuteColor = LockscreenClockUtils.parseColor(CustomLockscreenSettings.getMinuteColor(mContext));
             mDateView.setTextColor(hourColor);
             mHour1.setColorFilter(hourColor);
             mHour2.setColorFilter(hourColor);

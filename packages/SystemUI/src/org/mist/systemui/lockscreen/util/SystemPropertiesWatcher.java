@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Process;
-import android.os.SystemProperties;
 import android.util.Log;
 import javax.inject.Inject;
 import com.android.systemui.dagger.SysUISingleton;
@@ -15,14 +14,6 @@ public class SystemPropertiesWatcher {
 
     private static final String TAG = "MIST_LOCKSCREEN";
     private static final String ACTION_SETTINGS_CHANGED = "org.mist.systemui.lockscreen.SETTINGS_CHANGED";
-    
-    private static final String[] WATCHED_PROPERTIES = {
-        "persist.mist.customlockscreen.enable",
-        "persist.mist.customlockscreen.type", 
-        "persist.mist.customlockscreen.color",
-        "persist.mist.customlockscreen.hour.color",
-        "persist.mist.customlockscreen.minute.color"
-    };
 
     private final Context mContext;
     private final BroadcastReceiver mSettingsReceiver = new BroadcastReceiver() {
@@ -44,12 +35,13 @@ public class SystemPropertiesWatcher {
     private void registerReceiver() {
         IntentFilter filter = new IntentFilter(ACTION_SETTINGS_CHANGED);
         mContext.registerReceiver(mSettingsReceiver, filter, Context.RECEIVER_EXPORTED);
-        Log.d(TAG, "SystemPropertiesWatcher registered for action: " + ACTION_SETTINGS_CHANGED);
+        Log.d(TAG, "SystemPropertiesWatcher registered for broadcast");
     }
 
     public void destroy() {
         try {
             mContext.unregisterReceiver(mSettingsReceiver);
+            Log.d(TAG, "SystemPropertiesWatcher unregistered");
         } catch (IllegalArgumentException e) {
             Log.w(TAG, "Receiver not registered", e);
         }

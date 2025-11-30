@@ -26,11 +26,11 @@ public class CustomLockScreenClockFactory {
     private static final String TAG = "MIST_LOCKSCREEN";
 
     public static ICustomLockScreenClock create(Context context) {
-        if (!CustomLockscreenSettings.isEnabled()) {
+        if (!CustomLockscreenSettings.isEnabled(context)) {
             return null;
         }
 
-        int clockType = CustomLockscreenSettings.getClockType();
+        int clockType = CustomLockscreenSettings.getClockType(context);
 
         switch (clockType) {
             case 1:
