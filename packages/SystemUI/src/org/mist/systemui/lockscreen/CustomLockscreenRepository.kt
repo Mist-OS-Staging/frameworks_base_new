@@ -14,12 +14,11 @@ import org.mist.systemui.lockscreen.util.CustomLockscreenSettings
 
 private const val TAG = "MIST_LOCKSCREEN"
 
-
 @SysUISingleton
 class CustomLockscreenRepository @Inject constructor(
     private val context: Context
 ) {
-    private val _isEnabled = MutableStateFlow(CustomLockscreenSettings.isEnabled())
+    private val _isEnabled = MutableStateFlow(CustomLockscreenSettings.isEnabled(context))
     val isEnabled = _isEnabled.asStateFlow()
 
     private val settingsChangedReceiver = object : BroadcastReceiver() {
@@ -34,13 +33,6 @@ class CustomLockscreenRepository @Inject constructor(
     init {
         val filter = IntentFilter(ACTION_SETTINGS_CHANGED)
         context.registerReceiver(settingsChangedReceiver, filter, Context.RECEIVER_EXPORTED)
-    }
-
-    private fun updateState() {
-        val newState = CustomLockscreenSettings.isEnabled()
-        if (_isEnabled.value != newState) {
-            _isEnabled.value = newState
-        }
     }
 
     companion object {

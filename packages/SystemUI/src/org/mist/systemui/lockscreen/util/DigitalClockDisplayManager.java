@@ -1,5 +1,6 @@
 package org.mist.systemui.lockscreen.util;
 
+import android.content.Context;
 import android.graphics.Color;
 import android.graphics.RenderEffect;
 import android.graphics.Shader;
@@ -10,10 +11,12 @@ public class DigitalClockDisplayManager {
 
     private static final String TAG = "MIST_LOCKSCREEN";
 
+    private Context mContext;
     private ImageView[] mDigitViews;
     private int[] mDigitResources;
 
-    public DigitalClockDisplayManager(ImageView[] digitViews, int[] digitResources) {
+    public DigitalClockDisplayManager(Context context, ImageView[] digitViews, int[] digitResources) {
+        this.mContext = context;
         this.mDigitViews = digitViews;
         this.mDigitResources = digitResources;
     }
@@ -35,8 +38,8 @@ public class DigitalClockDisplayManager {
     }
 
     public void applyColorAndEffects(ImageView[] hourViews, ImageView[] minuteViews) {
-        String hourColorProp = CustomLockscreenSettings.getHourColor();
-        String minuteColorProp = CustomLockscreenSettings.getMinuteColor();
+        String hourColorProp = CustomLockscreenSettings.getHourColor(mContext);
+        String minuteColorProp = CustomLockscreenSettings.getMinuteColor(mContext);
 
         int hourColor = LockscreenClockUtils.parseColor(hourColorProp);
         int minuteColor = LockscreenClockUtils.parseColor(minuteColorProp);

@@ -221,8 +221,8 @@ public class TextTimeClockController extends BaseLockscreenController {
 
     @Override
     public void applyStyles() {
-        int introColor = LockscreenClockUtils.parseColor(CustomLockscreenSettings.getHourColor());
-        int timeColor = LockscreenClockUtils.parseColor(CustomLockscreenSettings.getMinuteColor());
+        int introColor = LockscreenClockUtils.parseColor(CustomLockscreenSettings.getHourColor(mContext));
+        int timeColor = LockscreenClockUtils.parseColor(CustomLockscreenSettings.getMinuteColor(mContext));
         
         mIntroView.setTextColor(introColor);
         mHourView.setTextColor(timeColor);

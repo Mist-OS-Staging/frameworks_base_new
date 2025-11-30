@@ -49,7 +49,7 @@ public class BigBoomClockController extends BaseLockscreenController {
 
     private void setupDisplayManager() {
         ImageView[] digitViews = {mHour1, mHour2, mMinute1, mMinute2};
-        mDisplayManager = new DigitalClockDisplayManager(digitViews, mDigitRes);
+        mDisplayManager = new DigitalClockDisplayManager(mContext, digitViews, mDigitRes);
     }
 
     private void setupLayoutManager() {

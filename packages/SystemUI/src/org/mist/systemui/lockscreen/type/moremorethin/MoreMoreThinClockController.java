@@ -45,7 +45,7 @@ public class MoreMoreThinClockController extends BaseLockscreenController {
     public View getView(Context context) {
         mContext = context;
 
-        mUseBlurEffect = "blur".equalsIgnoreCase(CustomLockscreenSettings.getClockColor().trim());
+        mUseBlurEffect = "blur".equalsIgnoreCase(CustomLockscreenSettings.getClockColor(mContext).trim());
 
         createViews();
         mLayoutManager = new LockscreenLayoutManager(mContainer);
@@ -90,7 +90,7 @@ public class MoreMoreThinClockController extends BaseLockscreenController {
             for (ImageView iv : mDigitViews) {
                 mContainer.addView(iv);
             }
-            mDigitalClockDisplayManager = new DigitalClockDisplayManager(mDigitViews, mDigitResources);
+            mDigitalClockDisplayManager = new DigitalClockDisplayManager(mContext, mDigitViews, mDigitResources);
         }
     }
 
@@ -154,7 +154,7 @@ public class MoreMoreThinClockController extends BaseLockscreenController {
     @Override
     public void applyStyles() {
         if (!mUseBlurEffect) {
-            int hourColor = LockscreenClockUtils.parseColor(CustomLockscreenSettings.getHourColor());
+            int hourColor = LockscreenClockUtils.parseColor(CustomLockscreenSettings.getHourColor(mContext));
             mDateView.setTextColor(hourColor);
             mDateView.setAlpha(0.8f);
 

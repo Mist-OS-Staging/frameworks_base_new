@@ -91,8 +91,8 @@ public class ClassicClockController extends BaseLockscreenController {
 
     @Override
     public void applyStyles() {
-        int dateColor = LockscreenClockUtils.parseColor(CustomLockscreenSettings.getHourColor());
-        int timeColor = LockscreenClockUtils.parseColor(CustomLockscreenSettings.getMinuteColor());
+        int dateColor = LockscreenClockUtils.parseColor(CustomLockscreenSettings.getHourColor(mContext));
+        int timeColor = LockscreenClockUtils.parseColor(CustomLockscreenSettings.getMinuteColor(mContext));
         
         mGregorianDateView.setTextColor(dateColor);
         mLunarDateView.setTextColor(dateColor);

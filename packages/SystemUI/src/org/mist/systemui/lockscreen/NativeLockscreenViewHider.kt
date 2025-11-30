@@ -15,10 +15,11 @@ private const val TAG = "MIST_LOCKSCREEN"
 class NativeLockscreenViewHider @Inject constructor(private val context: Context) {
 
     fun hideNativeViews(entryView: View) {
-        if (!CustomLockscreenSettings.isEnabled()) {
+        if (!CustomLockscreenSettings.isEnabled(context)) {
             Log.d(TAG, "Custom lockscreen is disabled, native views will remain visible.")
             return
         }
+        
         entryView.postDelayed({
             val rootView = entryView.rootView as? ViewGroup ?: return@postDelayed
             val rootId = context.resources.getIdentifier("keyguard_root_view", "id", "com.android.systemui")
@@ -33,7 +34,7 @@ class NativeLockscreenViewHider @Inject constructor(private val context: Context
                 "lockscreen_clock_view",
                 "lockscreen_clock_view_large",
                 "keyguard_slice_view"
-            ).map { resourceName ->
+            ).mapNotNull { resourceName ->
                 val resourceId = context.resources.getIdentifier(resourceName, "id", "com.android.systemui")
                 if (resourceId != 0) { 
                     rootView.findViewById<View?>(resourceId)
@@ -42,14 +43,12 @@ class NativeLockscreenViewHider @Inject constructor(private val context: Context
                     null
                 }
             }.forEach { view ->
-                view?.hideView()
+                view.hideView()
             }
         }, 100) 
     }
 
-    private fun View?.hideView() {
-        if (this == null) return
-
+    private fun View.hideView() {
         fun makeInvisible() {
             if (isVisible) {
                 visibility = View.INVISIBLE

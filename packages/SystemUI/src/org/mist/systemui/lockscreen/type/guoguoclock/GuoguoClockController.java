@@ -49,7 +49,7 @@ public class GuoguoClockController extends BaseLockscreenController {
     @Override
     public View getView(Context context) {
         mContext = context;
-        mUseBlurEffect = mContext.getString(R.string.guoguo_blur_effect).equalsIgnoreCase(CustomLockscreenSettings.getClockColor().trim());
+        mUseBlurEffect = mContext.getString(R.string.guoguo_blur_effect).equalsIgnoreCase(CustomLockscreenSettings.getClockColor(mContext).trim());
         createViews();
         mLayoutManager = new LockscreenLayoutManager(mContainer);
         setupLayout();
@@ -117,7 +117,7 @@ public class GuoguoClockController extends BaseLockscreenController {
             mDotView.setImageResource(mDotResource);
             mContainer.addView(mDotView);
             
-            mDigitalClockDisplayManager = new DigitalClockDisplayManager(mDigitViews, mDigitResources);
+            mDigitalClockDisplayManager = new DigitalClockDisplayManager(mContext, mDigitViews, mDigitResources);
         }
     }
 

@@ -21,14 +21,17 @@ public class CustomLockscreenClockManager {
     private View mCustomClockView;
 
     @Inject
-    public CustomLockscreenClockManager(Context context, NativeLockscreenViewHider nativeViewHider, SystemPropertiesWatcher propertiesWatcher) {
+    public CustomLockscreenClockManager(
+            Context context,
+            NativeLockscreenViewHider nativeViewHider,
+            SystemPropertiesWatcher propertiesWatcher) {
         this.mContext = context;
         this.mNativeViewHider = nativeViewHider;
         this.mPropertiesWatcher = propertiesWatcher;
     }
 
     public boolean isEnabled() {
-        return CustomLockscreenSettings.isEnabled();
+        return CustomLockscreenSettings.isEnabled(mContext);
     }
     
     public void hideNativeClock(View view) {

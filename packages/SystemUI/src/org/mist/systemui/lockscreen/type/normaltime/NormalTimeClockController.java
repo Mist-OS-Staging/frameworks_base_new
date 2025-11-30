@@ -45,7 +45,7 @@ public class NormalTimeClockController extends BaseLockscreenController {
     @Override
     public View getView(Context context) {
         mContext = context;
-        mUseBlurEffect = "blur".equalsIgnoreCase(CustomLockscreenSettings.getClockColor().trim());
+        mUseBlurEffect = "blur".equalsIgnoreCase(CustomLockscreenSettings.getClockColor(mContext).trim());
 
         createViews();
         setupLayout();
@@ -92,7 +92,7 @@ public class NormalTimeClockController extends BaseLockscreenController {
             mContainer.addView(mMinute2);
 
             ImageView[] digitViews = {mHour1, mHour2, mMinute1, mMinute2};
-            mDigitalClockDisplayManager = new DigitalClockDisplayManager(digitViews, mDigitResources);
+            mDigitalClockDisplayManager = new DigitalClockDisplayManager(mContext, digitViews, mDigitResources);
         }
     }
 
@@ -208,8 +208,8 @@ public class NormalTimeClockController extends BaseLockscreenController {
     @Override
     public void applyStyles() {
         if (!mUseBlurEffect) {
-            int hourColor = LockscreenClockUtils.parseColor(CustomLockscreenSettings.getHourColor());
-            int minuteColor = LockscreenClockUtils.parseColor(CustomLockscreenSettings.getMinuteColor());
+            int hourColor = LockscreenClockUtils.parseColor(CustomLockscreenSettings.getHourColor(mContext));
+            int minuteColor = LockscreenClockUtils.parseColor(CustomLockscreenSettings.getMinuteColor(mContext));
 
             mLunarDateView.setTextColor(hourColor);
             mGregorianDateView.setTextColor(hourColor);
