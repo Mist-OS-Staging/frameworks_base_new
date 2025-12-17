@@ -63,6 +63,7 @@ class MediaViewController @Inject constructor(
 
     private var listening = false
     private var featureEnabled = false
+    private var aodEnabled = false
     private var artworkDrawable: Drawable? = null
     private var isMediaPlaying = false
     private var bouncerShowingOrKeyguardDismissing = false
@@ -71,6 +72,7 @@ class MediaViewController @Inject constructor(
     private var mediaFadeLevel = 40
     private var mediaBlurLevel = 90
     private var pixelSize = 20
+    private var aodDimLevel = 35
 
     private val settingsObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
         override fun onChange(selfChange: Boolean) {
@@ -91,12 +93,24 @@ class MediaViewController @Inject constructor(
     private var dismissingKeyguard = false
     private var retryRunnable: Runnable? = null
     private var coalesceJob: Job? = null
+    
+    private var showDelayJob: Job? = null
+    private var hideDelayJob: Job? = null
+    
+    private val MEDIA_SHOW_DELAY_MS = 200L
+    private val MEDIA_HIDE_DELAY_MS = 100L
 
     private val sharedTypedValue = TypedValue()
+    private val grayscaleMatrix = ColorMatrix().apply { setSaturation(0f) }
 
     init {
         context.contentResolver.registerContentObserver(
             Settings.System.getUriFor(Settings.System.LS_MEDIA_ART_ENABLED),
+            false,
+            settingsObserver
+        )
+        context.contentResolver.registerContentObserver(
+            Settings.System.getUriFor(Settings.System.LS_MEDIA_ART_AOD_ENABLED),
             false,
             settingsObserver
         )
@@ -120,6 +134,11 @@ class MediaViewController @Inject constructor(
             false,
             settingsObserver
         )
+        context.contentResolver.registerContentObserver(
+            Settings.System.getUriFor(Settings.System.LS_MEDIA_ART_AOD_DIM_LEVEL),
+            false,
+            settingsObserver
+        )
 
         updateSettings()
     }
@@ -128,6 +147,13 @@ class MediaViewController @Inject constructor(
         featureEnabled = Settings.System.getIntForUser(
             context.contentResolver,
             Settings.System.LS_MEDIA_ART_ENABLED,
+            0,
+            UserHandle.USER_CURRENT
+        ) == 1
+
+        aodEnabled = Settings.System.getIntForUser(
+            context.contentResolver,
+            Settings.System.LS_MEDIA_ART_AOD_ENABLED,
             0,
             UserHandle.USER_CURRENT
         ) == 1
@@ -160,6 +186,13 @@ class MediaViewController @Inject constructor(
             UserHandle.USER_CURRENT
         ).coerceIn(5, 50)
 
+        aodDimLevel = Settings.System.getIntForUser(
+            context.contentResolver,
+            Settings.System.LS_MEDIA_ART_AOD_DIM_LEVEL,
+            35,
+            UserHandle.USER_CURRENT
+        ).coerceIn(0, 100)
+
         if (!featureEnabled) {
             cleanupResources(false)
         }
@@ -175,7 +208,19 @@ class MediaViewController @Inject constructor(
         }
     }
 
+    private fun isDozing(): Boolean = ScrimUtils.get().isDozing()
+    private fun isPulsing(): Boolean = ScrimUtils.get().isPulsing()
+
     private fun setupMediaFilter() {
+        if ((isDozing() || isPulsing()) && aodEnabled) {
+            val grayscaleEffect = RenderEffect.createColorFilterEffect(
+                ColorMatrixColorFilter(grayscaleMatrix)
+            )
+            mediaScrim.setRenderEffect(grayscaleEffect)
+            mediaScrim.colorFilter = null
+            return
+        }
+
         val effect = when (mediaFilter) {
             1 -> RenderEffect.createBlurEffect(
                 mediaBlurLevel.toFloat(), 
@@ -236,12 +281,17 @@ class MediaViewController @Inject constructor(
 
     private fun shouldShowMediaArt(): Boolean {
         if (!featureEnabled) return false
+        
+        val dozing = isDozing()
+        val pulsing = isPulsing()
+
+        if ((dozing || pulsing) && !aodEnabled) return false
+        
         if (artworkDrawable == null) return false
         val isPortrait = context.resources.configuration.orientation != Configuration.ORIENTATION_LANDSCAPE
         val isKeyguard = ScrimUtils.get().isKeyguardShowing()
-        val isDozing = ScrimUtils.get().isDozing()
         val isCollapsed = ScrimUtils.get().isPanelFullyCollapsed()
-        if (!isPortrait || !isKeyguard || isDozing || !isCollapsed) return false
+        if (!isPortrait || !isKeyguard || !isCollapsed) return false
         if (!isMediaPlaying) return false
         if (bouncerShowingOrKeyguardDismissing) return false
         return true
@@ -252,22 +302,51 @@ class MediaViewController @Inject constructor(
     }
 
     private fun showMediaArt() {
-        if (isAlbumArtVisible && scrimState == STATE_SCRIM_VISIBLE) return
-        if (dismissingKeyguard) return
+        if (isAlbumArtVisible && scrimState == STATE_SCRIM_VISIBLE) {
+            updateAodAlpha()
+            return
+        }
+
+        dismissingKeyguard = false
         cancelScrimAnim()
         updateMediaArt()
         setupMediaFilter()
+        
+        val targetAlpha = getTargetAlpha()
+        
         mediaScrim.apply {
             alpha = 0f
             visibility = View.VISIBLE
             scrimState = STATE_SCRIM_VISIBLE
             animate()
-                .alpha(1f)
+                .alpha(targetAlpha)
                 .setDuration(300)
                 .setListener(null)
                 .start()
         }
         isAlbumArtVisible = true
+    }
+
+    private fun getTargetAlpha(): Float {
+        return if ((isDozing() || isPulsing()) && aodEnabled) {
+            aodDimLevel / 100f
+        } else {
+            1f
+        }
+    }
+
+    private fun updateAodAlpha() {
+        if (scrimState != STATE_SCRIM_VISIBLE) return
+        
+        val targetAlpha = getTargetAlpha()
+        
+        cancelScrimAnim()
+        setupMediaFilter()
+        mediaScrim.animate()
+            .alpha(targetAlpha)
+            .setDuration(300)
+            .setListener(null)
+            .start()
     }
 
     private fun updateMediaArt() {
@@ -307,10 +386,16 @@ class MediaViewController @Inject constructor(
             alpha = 255
         }
 
+        val effectiveFadeLevel = if ((isDozing() || isPulsing()) && aodEnabled) {
+            min(mediaFadeLevel + 15, 100)
+        } else {
+            mediaFadeLevel
+        }
+
         val fadeColor = ColorUtils.blendARGB(
             Color.TRANSPARENT,
             Color.BLACK,
-            mediaFadeLevel / 100f
+            effectiveFadeLevel / 100f
         )
 
         val overlay = ColorDrawable(fadeColor)
@@ -325,9 +410,9 @@ class MediaViewController @Inject constructor(
     private fun applyPixelation(source: Bitmap): Bitmap {
         val width = source.width
         val height = source.height
-        val config = source.config ?:Bitmap. Config.ARGB_8888
-	val pixelated = Bitmap.createBitmap(width, height, config)
-	val canvas = Canvas(pixelated)
+        val config = source.config ?: Bitmap.Config.ARGB_8888
+        val pixelated = Bitmap.createBitmap(width, height, config)
+        val canvas = Canvas(pixelated)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             isFilterBitmap = false
         }
@@ -398,7 +483,7 @@ class MediaViewController @Inject constructor(
         val ratio = max(ratioH, ratioW)
 
         val desiredHeight = (ratio * bitmap.height).roundToInt().coerceAtLeast(1)
-        val desiredWidth = (ratio * bitmap.width ).roundToInt().coerceAtLeast(1)
+        val desiredWidth = (ratio * bitmap.width).roundToInt().coerceAtLeast(1)
 
         if (abs(desiredWidth - bitmap.width) <= 1 && abs(desiredHeight - bitmap.height) <= 1) {
             val xPixelShift = max((bitmap.width - displayBounds.width()) / 2, 0)
@@ -439,16 +524,21 @@ class MediaViewController @Inject constructor(
     }
 
     fun cleanupResources(animate: Boolean) {
-        if (dismissingKeyguard) return
-        dismissingKeyguard = true
+        showDelayJob?.cancel()
+        hideDelayJob?.cancel()
+
         retryRunnable?.let { mediaScrim.removeCallbacks(it) }
         retryRunnable = null
         mediaArtJob?.cancel()
         cancelScrimAnim()
+        
         if (!animate) {
+            dismissingKeyguard = false
             clearResources()
-            return;
+            return
         }
+        
+        dismissingKeyguard = true
         mediaScrim.animate()
             .alpha(0f)
             .setDuration(100)
@@ -463,10 +553,7 @@ class MediaViewController @Inject constructor(
     override fun onAlbumArtChanged(drawable: Drawable) {
         coroutineScope.launch {
             artworkDrawable = drawable
-            onMediaStateChanged()
-            if (scrimState == STATE_SCRIM_VISIBLE) {
-                updateMediaArt()
-            }
+            updateMediaState()
         }
     }
 
@@ -474,13 +561,15 @@ class MediaViewController @Inject constructor(
         isMediaPlaying = state == PlaybackState.STATE_PLAYING
         coroutineScope.launch {
             if (!isMediaPlaying) artworkDrawable = null
-            onMediaStateChanged()
+            updateMediaState()
         }
     }
 
     override fun onPrimaryBouncerShowingChanged(showing: Boolean) {
         bouncerShowingOrKeyguardDismissing = showing
         if (showing) {
+            showDelayJob?.cancel()
+            hideDelayJob?.cancel()
             cleanupResources(true)
         }
     }
@@ -488,6 +577,8 @@ class MediaViewController @Inject constructor(
     override fun onKeyguardGoingAwayChanged(goingAway: Boolean) {
         bouncerShowingOrKeyguardDismissing = goingAway
         if (goingAway) {
+            showDelayJob?.cancel()
+            hideDelayJob?.cancel()
             cleanupResources(true)
         }
     }
@@ -495,31 +586,45 @@ class MediaViewController @Inject constructor(
     override fun onKeyguardFadingAwayChanged(fadingAway: Boolean) {
         bouncerShowingOrKeyguardDismissing = fadingAway
         if (fadingAway) {
+            showDelayJob?.cancel()
+            hideDelayJob?.cancel()
             cleanupResources(true)
         }
     }
 
     override fun onDozingChanged(dozing: Boolean) {
         coroutineScope.launch {
-            onMediaStateChanged()
+            if (scrimState == STATE_SCRIM_VISIBLE) {
+                updateAodAlpha()
+            }
+            updateMediaState()
+        }
+    }
+
+    override fun setPulsing(pulsing: Boolean) {
+        coroutineScope.launch {
+            if (scrimState == STATE_SCRIM_VISIBLE) {
+                updateAodAlpha()
+            }
+            updateMediaState()
         }
     }
 
     override fun onExpandedFractionChanged(expandedFraction: Float) {
         coroutineScope.launch {
-            onMediaStateChanged()
+            updateMediaState()
         }
     }
 
     override fun onBarStateChanged(state: Int) {
         coroutineScope.launch {
-            onMediaStateChanged()
+            updateMediaState()
         }
     }
 
     override fun onQsVisibilityChanged(visible: Boolean) {
         coroutineScope.launch {
-            onMediaStateChanged()
+            updateMediaState()
         }
     }
 
@@ -527,29 +632,51 @@ class MediaViewController @Inject constructor(
         if (showing) {
             dismissingKeyguard = false
         } else {
+            showDelayJob?.cancel()
+            hideDelayJob?.cancel()
             cleanupResources(false)
         }
         coroutineScope.launch {
-            onMediaStateChanged()
+            updateMediaState()
         }
     }
 
     override fun onScreenTurnedOff() {
+        showDelayJob?.cancel()
+        hideDelayJob?.cancel()
+        dismissingKeyguard = false
         cleanupResources(false)
     }
 
     override fun onStartedWakingUp() {
+        dismissingKeyguard = false
         coroutineScope.launch {
-            onMediaStateChanged()
+            updateMediaState()
         }
     }
 
-    private suspend fun onMediaStateChanged() {
-        val show = shouldShowMediaArt()
-        if (show && scrimState == STATE_SCRIM_HIDDEN) {
-            showMediaArt()
-        } else if (!show && scrimState == STATE_SCRIM_VISIBLE) {
-            cleanupResources(true)
+    private suspend fun updateMediaState() {
+        val shouldShow = shouldShowMediaArt()
+        
+        showDelayJob?.cancel()
+        hideDelayJob?.cancel()
+        
+        if (shouldShow && scrimState == STATE_SCRIM_HIDDEN) {
+            showDelayJob = coroutineScope.launch {
+                delay(MEDIA_SHOW_DELAY_MS)
+                if (shouldShowMediaArt() && scrimState == STATE_SCRIM_HIDDEN) {
+                    showMediaArt()
+                }
+            }
+        } else if (!shouldShow && scrimState == STATE_SCRIM_VISIBLE) {
+            hideDelayJob = coroutineScope.launch {
+                delay(MEDIA_HIDE_DELAY_MS)
+                if (!shouldShowMediaArt() && scrimState == STATE_SCRIM_VISIBLE) {
+                    cleanupResources(true)
+                }
+            }
+        } else if (shouldShow && scrimState == STATE_SCRIM_VISIBLE) {
+            updateAodAlpha()
         }
     }
 
@@ -570,6 +697,8 @@ class MediaViewController @Inject constructor(
             ScrimUtils.get().removeListener(this)
             listening = false
         }
+        showDelayJob?.cancel()
+        hideDelayJob?.cancel()
         mediaArtJob?.cancel()
         mediaScrim.setImageDrawable(null)
         mediaScrim.setRenderEffect(null)

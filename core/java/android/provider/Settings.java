@@ -7256,6 +7256,16 @@ public final class Settings {
         public static final String LS_MEDIA_ART_PIXEL_SIZE = "ls_media_art_pixel_size";
 
         /**
+         * @hide
+         */
+        public static final String LS_MEDIA_ART_AOD_ENABLED = "ls_media_art_aod_enabled";
+
+        /**
+         * @hide
+         */
+        public static final String LS_MEDIA_ART_AOD_DIM_LEVEL = "ls_media_art_aod_dim_level";
+
+        /**
         * Lock Glymps - Dynamic lock screen wallpaper feature
         * @hide
         */
