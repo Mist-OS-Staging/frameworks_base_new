@@ -64,6 +64,7 @@ import android.os.UserHandle;
 import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
+import android.util.LruCache;
 import android.util.Pair;
 import android.view.Gravity;
 import android.view.View;
@@ -145,6 +146,7 @@ import kotlin.Unit;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.Executor;
 
@@ -226,6 +228,8 @@ public class MediaControlPanel {
     private boolean mIsScrubbing = false;
     private boolean mIsSeekBarEnabled = false;
 
+    private Boolean mIsTurbulenceNoiseEnabled = null;
+
     private final SeekBarViewModel.ScrubbingChangeListener mScrubbingChangeListener =
             this::setIsScrubbing;
     private final SeekBarViewModel.EnabledChangeListener mEnabledChangeListener =
@@ -245,6 +249,10 @@ public class MediaControlPanel {
     private TurbulenceNoiseAnimationConfig mTurbulenceNoiseAnimationConfig;
     private boolean mWasPlaying = false;
     private boolean mButtonClicked = false;
+    private CharSequence mLastContentDescription = null;
+
+    private final LruCache<Integer, WallpaperColors> mWallpaperColorCache = new LruCache<>(10);
+    private final LruCache<Integer, Float> mScaleCache = new LruCache<>(20);
 
     private final PaintDrawCallback mNoiseDrawCallback =
             new PaintDrawCallback() {
@@ -376,6 +384,15 @@ public class MediaControlPanel {
         mSeekBarViewModel.onDestroy();
         mMediaViewController.onDestroy();
         mSettingsObserver.stop();
+        
+        if (mWallpaperColorCache != null) {
+            mWallpaperColorCache.evictAll();
+        }
+        if (mScaleCache != null) {
+            mScaleCache.evictAll();
+        }
+        mLastContentDescription = null;
+        mIsTurbulenceNoiseEnabled = null;
     }
 
     /**
@@ -842,7 +859,6 @@ public class MediaControlPanel {
                     // After finishing the enter animation, we refresh state. This could pop if
                     // something is incorrectly bound, but needs to be run if other elements were
                     // updated while the enter animation was running
-                    mMediaViewController.refreshState();
                     return Unit.INSTANCE;
                 });
     }
@@ -866,7 +882,10 @@ public class MediaControlPanel {
         } else {
             contentDescription = null;
         }
-        mMediaViewHolder.getPlayer().setContentDescription(contentDescription);
+        if (!TextUtils.equals(mLastContentDescription, contentDescription)) {
+            mMediaViewHolder.getPlayer().setContentDescription(contentDescription);
+            mLastContentDescription = contentDescription;
+        }
     }
 
     private void bindArtworkAndColors(MediaData data, String key, boolean updateBackground) {
@@ -996,24 +1015,37 @@ public class MediaControlPanel {
     // on the UI Thread.
     @VisibleForTesting
     protected WallpaperColors getWallpaperColor(Icon artworkIcon) {
-        if (artworkIcon != null) {
-            if (artworkIcon.getType() == Icon.TYPE_BITMAP
-                    || artworkIcon.getType() == Icon.TYPE_ADAPTIVE_BITMAP) {
-                // Avoids extra processing if this is already a valid bitmap
-                Bitmap artworkBitmap = artworkIcon.getBitmap();
-                if (artworkBitmap.isRecycled()) {
-                    Log.d(TAG, "Cannot load wallpaper color from a recycled bitmap");
-                    return null;
-                }
-                return WallpaperColors.fromBitmap(artworkBitmap);
-            } else {
-                Drawable artworkDrawable = artworkIcon.loadDrawable(mContext);
-                if (artworkDrawable != null) {
-                    return WallpaperColors.fromDrawable(artworkDrawable);
-                }
+        if (artworkIcon == null) {
+            return null;
+        }
+        
+        int iconHash = artworkIcon.hashCode();
+        WallpaperColors cached = mWallpaperColorCache.get(iconHash);
+        if (cached != null) {
+            return cached;
+        }
+        
+        WallpaperColors colors = null;
+        if (artworkIcon.getType() == Icon.TYPE_BITMAP
+                || artworkIcon.getType() == Icon.TYPE_ADAPTIVE_BITMAP) {
+            Bitmap artworkBitmap = artworkIcon.getBitmap();
+            if (artworkBitmap.isRecycled()) {
+                Log.d(TAG, "Cannot load wallpaper color from a recycled bitmap");
+                return null;
+            }
+            colors = WallpaperColors.fromBitmap(artworkBitmap);
+        } else {
+            Drawable artworkDrawable = artworkIcon.loadDrawable(mContext);
+            if (artworkDrawable != null) {
+                colors = WallpaperColors.fromDrawable(artworkDrawable);
             }
         }
-        return null;
+        
+        if (colors != null) {
+            mWallpaperColorCache.put(iconHash, colors);
+        }
+        
+        return colors;
     }
 
     @VisibleForTesting
@@ -1061,9 +1093,25 @@ public class MediaControlPanel {
 
         int width = drawable.getIntrinsicWidth();
         int height = drawable.getIntrinsicHeight();
-        float scale = MediaDataUtils.getScaleFactor(new Pair(width, height),
-                new Pair(targetWidth, targetHeight));
+        
+        int cacheKey = Objects.hash(width, height, targetWidth, targetHeight);
+        Float cachedScale = mScaleCache.get(cacheKey);
+        
+        if (cachedScale != null) {
+            transitionDrawable.setLayerSize(layer, 
+                (int) (cachedScale * width), 
+                (int) (cachedScale * height));
+            return;
+        }
+        
+        float scale = MediaDataUtils.getScaleFactor(
+            new Pair(width, height),
+            new Pair(targetWidth, targetHeight));
+        
         if (scale == 0) return;
+        
+        mScaleCache.put(cacheKey, scale);
+        
         transitionDrawable.setLayerSize(layer, (int) (scale * width), (int) (scale * height));
     }
 
@@ -1247,9 +1295,11 @@ public class MediaControlPanel {
     }
 
     private boolean shouldPlayTurbulenceNoise() {
-        boolean isTurbulenceNoiseEnabled = mContext.getResources().getBoolean(
-                com.android.systemui.res.R.bool.config_turbulenceNoise);
-        return mButtonClicked && !mWasPlaying && isPlaying() && isTurbulenceNoiseEnabled;
+        if (mIsTurbulenceNoiseEnabled == null) {
+            mIsTurbulenceNoiseEnabled = mContext.getResources().getBoolean(
+                    com.android.systemui.res.R.bool.config_turbulenceNoise);
+        }
+        return mButtonClicked && !mWasPlaying && isPlaying() && mIsTurbulenceNoiseEnabled;
     }
 
     private TurbulenceNoiseAnimationConfig createTurbulenceNoiseConfig() {
