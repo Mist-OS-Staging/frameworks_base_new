@@ -19,22 +19,29 @@ import android.content.Context
 import android.media.AudioManager
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.dimensionResource
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import com.android.systemui.common.ringer.RingerSliderWidget
 import com.android.systemui.common.ringer.RingerModeInteractorImpl
+import com.android.systemui.qs.panels.ui.compose.TileShapeConfig
+import com.android.systemui.qs.panels.ui.compose.TileShapeStyle
+import com.android.systemui.qs.panels.ui.compose.rememberTileShapeConfig
 import com.android.systemui.res.R
 
 @Composable
 fun QSTileRingerSlider(
+    tileShapeConfig: TileShapeConfig,
     border: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val shapeStyle by rememberTileShapeConfig(tileShapeConfig)
 
     val interactor = remember {
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -48,10 +55,26 @@ fun QSTileRingerSlider(
             heightPx.toDp()
         }
         
+        val containerShape = remember(shapeStyle, tileHeight) {
+            when (shapeStyle) {
+                TileShapeStyle.ROUNDED -> RoundedCornerShape(tileHeight / 2)
+                TileShapeStyle.ROUNDED_RECTANGLE -> RoundedCornerShape(TileShapeConfig.ROUNDED_RECT_RADIUS_DP.dp)
+            }
+        }
+        
+        val thumbShape = remember(shapeStyle, tileHeight) {
+            when (shapeStyle) {
+                TileShapeStyle.ROUNDED -> RoundedCornerShape(tileHeight / 2)
+                TileShapeStyle.ROUNDED_RECTANGLE -> RoundedCornerShape(TileShapeConfig.ROUNDED_RECT_RADIUS_DP.dp)
+            }
+        }
+        
         RingerSliderWidget(
             interactor = interactor,
             theme = QSTileRingerTheme(),
             dimens = QSTileRingerDimens(tileHeight),
+            containerShape = containerShape,
+            thumbShape = thumbShape,
             modifier = Modifier.fillMaxWidth(),
             isDozing = false,
             border = border

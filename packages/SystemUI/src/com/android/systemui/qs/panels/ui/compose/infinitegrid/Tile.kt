@@ -104,6 +104,9 @@ import com.android.systemui.qs.panels.ui.compose.infinitegrid.CommonTileDefaults
 import com.android.systemui.qs.panels.ui.compose.infinitegrid.CommonTileDefaults.TileStartPadding
 import com.android.systemui.qs.panels.ui.compose.infinitegrid.CommonTileDefaults.longPressLabel
 import com.android.systemui.qs.panels.ui.compose.BounceableInfo
+import com.android.systemui.qs.panels.ui.compose.TileShapeConfig
+import com.android.systemui.qs.panels.ui.compose.TileShapeStyle
+import com.android.systemui.qs.panels.ui.compose.rememberTileShapeConfig
 import com.android.systemui.qs.panels.ui.viewmodel.AccessibilityUiState
 import com.android.systemui.qs.panels.ui.viewmodel.BounceableTileViewModel
 import com.android.systemui.qs.panels.ui.viewmodel.DetailsViewModel
@@ -161,6 +164,7 @@ private val TileViewModel.traceName
  * @param interactionSource An optional [MutableInteractionSource] to track user interactions with
  *   the tile, used by the parent composable to animate a bounce effect. Tiles may or may not use
  *   this interaction source to control whether they should bounce or not.
+ * @param tileShapeConfig The [TileShapeConfig] to determine tile corner radius style
  * @param modifier An optional [Modifier] to be applied to the root composable of the tile.
  * @param isVisible Whether the tile is currently visible. Defaults to true.
  * @param requestToggleTextFeedback A lambda function that is invoked when a toggleable icon only
@@ -177,6 +181,7 @@ fun Tile(
     bounceableInfo: BounceableInfo?,
     tileHapticsViewModelFactoryProvider: TileHapticsViewModelFactoryProvider,
     interactionSource: MutableInteractionSource?,
+    tileShapeConfig: TileShapeConfig,
     modifier: Modifier = Modifier,
     isVisible: () -> Boolean = { true },
     requestToggleTextFeedback: (TileSpec) -> Unit = {},
@@ -209,19 +214,30 @@ fun Tile(
             }
 
         if (tile.spec.spec == "sound" && !iconOnly) {
-            QSTileRingerSlider()
+            QSTileRingerSlider(
+                tileShapeConfig = tileShapeConfig,
+                border = Modifier
+            )
             return@trace
         }
+
+        val shapeStyle by rememberTileShapeConfig(tileShapeConfig)
 
         BoxWithConstraints {
             val spacing = dimensionResource(R.dimen.qs_tile_margin_horizontal)
             val tileHeight = (maxWidth / 2) - (spacing / 2)
 
-            // TODO(b/361789146): Draw the shapes instead of clipping
-            val tileShape = RoundedCornerShape(
-                if (iconOnly) maxWidth / 2
-                else tileHeight / 2
-            )
+            val tileShape = remember(iconOnly, maxWidth, tileHeight, shapeStyle) {
+                val radius = when (shapeStyle) {
+                    TileShapeStyle.ROUNDED -> {
+                        if (iconOnly) maxWidth / 2 else tileHeight / 2
+                    }
+                    TileShapeStyle.ROUNDED_RECTANGLE -> {
+                        TileShapeConfig.ROUNDED_RECT_RADIUS_DP.dp
+                    }
+                }
+                RoundedCornerShape(radius)
+            }
             
             val animatedColor by animateColorAsState(
                 colors.background, 

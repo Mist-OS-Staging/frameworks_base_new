@@ -35,6 +35,7 @@ import com.android.systemui.media.controls.ui.controller.MediaHierarchyManager.C
 import com.android.systemui.qs.panels.shared.model.SizedTileImpl
 import com.android.systemui.qs.panels.ui.compose.PaginatableGridLayout
 import com.android.systemui.qs.panels.ui.compose.TileListener
+import com.android.systemui.qs.panels.ui.compose.TileShapeConfig
 import com.android.systemui.qs.panels.ui.compose.bounceableInfo
 import com.android.systemui.qs.panels.ui.compose.rememberEditListState
 import com.android.systemui.qs.panels.ui.viewmodel.BounceableTileViewModel
@@ -56,6 +57,7 @@ constructor(
     private val iconTilesViewModel: IconTilesViewModel,
     private val viewModelFactory: InfiniteGridViewModel.Factory,
     private val tileHapticsViewModelFactoryProvider: TileHapticsViewModelFactoryProvider,
+    private val tileShapeConfig: TileShapeConfig,
 ) : PaginatableGridLayout {
 
     @Composable
@@ -127,6 +129,7 @@ constructor(
                         ),
                     tileHapticsViewModelFactoryProvider = tileHapticsViewModelFactoryProvider,
                     interactionSource = interactionSources[spanIndex],
+                    tileShapeConfig = tileShapeConfig,
                     detailsViewModel = detailsViewModel,
                     isVisible = listening,
                 )
@@ -179,6 +182,7 @@ constructor(
             listState = currentListState,
             otherTiles = otherTiles,
             columns = columns,
+            tileShapeConfig = tileShapeConfig,
             modifier = modifier,
             onAddTile = onAddTile,
             onRemoveTile = onRemoveTile,

@@ -42,6 +42,8 @@ fun RingerSliderWidget(
     theme: RingerSliderTheme,
     dimens: RingerSliderDimens,
     modifier: Modifier = Modifier,
+    containerShape: Shape = CircleShape,
+    thumbShape: Shape = CircleShape,
     isDozing: Boolean = false,
     border: Modifier = Modifier
 ) {
@@ -95,10 +97,10 @@ fun RingerSliderWidget(
     Box(
         modifier = modifier
             .height(dimens.thumbSize)
-            .background(if (isDozing) Color.Transparent else theme.neutralBg, CircleShape)
-            .clip(CircleShape)
+            .background(if (isDozing) Color.Transparent else theme.neutralBg, containerShape)
+            .clip(containerShape)
             .then(if (isDozing)
-                Modifier.border(theme.dozeStroke, Color.White, CircleShape)
+                Modifier.border(theme.dozeStroke, Color.White, containerShape)
             else border)
             .pointerInput(availableModes, numModes) {
                 detectTapGestures { tapOffset ->
@@ -178,11 +180,11 @@ fun RingerSliderWidget(
                     .offset(x = thumbOffset)
                     .size(dimens.thumbSize)
                     .padding(dimens.thumbPadding)
-                    .background(if (isDozing) Color.Transparent else theme.activeBg, CircleShape)
+                    .background(if (isDozing) Color.Transparent else theme.activeBg, thumbShape)
                     .then(if (isDozing)
-                        Modifier.border(theme.dozeStroke, Color.White, CircleShape)
+                        Modifier.border(theme.dozeStroke, Color.White, thumbShape)
                     else
-                        Modifier.border(2.dp, Color.Transparent, CircleShape)),
+                        Modifier.border(2.dp, Color.Transparent, thumbShape)),
                 contentAlignment = Alignment.Center
             ) {
                 val currentIndex = animatedPosition.value.roundToInt().coerceIn(0, numModes - 1)

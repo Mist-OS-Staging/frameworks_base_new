@@ -143,6 +143,7 @@ import com.android.systemui.qs.footer.ui.compose.FooterActions
 import com.android.systemui.qs.panels.ui.compose.EditMode
 import com.android.systemui.qs.panels.ui.compose.QuickQuickSettings
 import com.android.systemui.qs.panels.ui.compose.TileGrid
+import com.android.systemui.qs.panels.ui.compose.TileShapeConfig
 import com.android.systemui.qs.shared.ui.ElementKeys
 import com.android.systemui.qs.ui.composable.QuickSettingsShade
 import com.android.systemui.qs.ui.composable.QuickSettingsShade.systemGestureExclusionInShade
@@ -185,6 +186,7 @@ constructor(
     private val qsFragmentComposeViewModelFactory: QSFragmentComposeViewModel.Factory,
     private val miniPlayerViewModelFactory: MiniPlayerViewModel.Factory,
     private val dumpManager: DumpManager,
+    private val tileShapeConfig: TileShapeConfig,
 ) : LifecycleFragment(), QS, Dumpable {
 
     private val scrollListener = MutableStateFlow<QS.ScrollListener?>(null)
@@ -688,6 +690,7 @@ constructor(
                     @Composable {
                         QuickQuickSettings(
                             viewModel = viewModel.quickQuickSettingsViewModel,
+                            tileShapeConfig = tileShapeConfig,
                             listening = {
                                 /*
                                  *  When always compose is false, this will always be true, and we'll be

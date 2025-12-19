@@ -7696,6 +7696,11 @@ public final class Settings {
         public static final String QQS_TILES_ROWS = "qqs_tiles_rows";
 
         /**
+         * @hide
+         */
+        public static final String QS_TILE_SHAPE_STYLE = "qs_tile_shape_style";
+
+        /**
          * What to show at the bottom of the Ambient display
          * 0: Nothing.
          * 1: Battery Percentage.

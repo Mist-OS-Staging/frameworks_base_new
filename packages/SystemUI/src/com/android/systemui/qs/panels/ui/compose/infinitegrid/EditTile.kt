@@ -160,6 +160,9 @@ import com.android.systemui.qs.panels.ui.compose.selection.TileState
 import com.android.systemui.qs.panels.ui.compose.selection.rememberResizingState
 import com.android.systemui.qs.panels.ui.compose.selection.rememberSelectionState
 import com.android.systemui.qs.panels.ui.compose.selection.selectableTile
+import com.android.systemui.qs.panels.ui.compose.TileShapeConfig
+import com.android.systemui.qs.panels.ui.compose.TileShapeStyle
+import com.android.systemui.qs.panels.ui.compose.rememberTileShapeConfig
 import com.android.systemui.qs.panels.ui.model.AvailableTileGridCell
 import com.android.systemui.qs.panels.ui.model.GridCell
 import com.android.systemui.qs.panels.ui.model.SpacerGridCell
@@ -233,6 +236,7 @@ fun DefaultEditTileGrid(
     otherTiles: List<SizedTile<EditTileViewModel>>,
     columns: Int,
     largeTilesSpan: Int,
+    tileShapeConfig: TileShapeConfig,
     modifier: Modifier,
     onAddTile: (TileSpec, Int) -> Unit,
     onRemoveTile: (TileSpec) -> Unit,
@@ -316,6 +320,7 @@ fun DefaultEditTileGrid(
                     onResize,
                     onRemoveTile,
                     onSetTiles,
+                    tileShapeConfig,
                 )
 
                 // Sets a minimum height to be used when available tiles are hidden
@@ -354,6 +359,7 @@ fun DefaultEditTileGrid(
                                 columns,
                                 { onAddTile(it, listState.tileSpecs().size) }, // Add to the end
                                 listState,
+                                tileShapeConfig,
                             )
                         }
                     }
@@ -520,6 +526,7 @@ private fun CurrentTilesGrid(
     onResize: (TileSpec, toIcon: Boolean) -> Unit,
     onRemoveTile: (TileSpec) -> Unit,
     onSetTiles: (List<TileSpec>) -> Unit,
+    tileShapeConfig: TileShapeConfig,
 ) {
     val currentListState by rememberUpdatedState(listState)
     val totalRows = listState.tiles.lastOrNull()?.row ?: 0
@@ -577,6 +584,7 @@ private fun CurrentTilesGrid(
             coroutineScope = coroutineScope,
             largeTilesSpan = largeTilesSpan,
             onRemoveTile = onRemoveTile,
+            tileShapeConfig = tileShapeConfig,
         ) { resizingOperation ->
             when (resizingOperation) {
                 is TemporaryResizeOperation -> {
@@ -620,6 +628,7 @@ private fun AvailableTileGrid(
     columns: Int,
     onAddTile: (TileSpec) -> Unit,
     dragAndDropState: DragAndDropState,
+    tileShapeConfig: TileShapeConfig,
 ) {
     // Available tiles aren't visible during drag and drop, so the row/col isn't needed
     val groupedTiles =
@@ -665,6 +674,7 @@ private fun AvailableTileGrid(
                                         dragAndDropState = dragAndDropState,
                                         selectionState = selectionState,
                                         onAddTile = onAddTile,
+                                        tileShapeConfig = tileShapeConfig,
                                         modifier = Modifier.weight(1f).fillMaxHeight(),
                                     )
                                 }
@@ -707,6 +717,7 @@ fun LazyGridScope.EditTiles(
     coroutineScope: CoroutineScope,
     largeTilesSpan: Int,
     onRemoveTile: (TileSpec) -> Unit,
+    tileShapeConfig: TileShapeConfig,
     onResize: (operation: ResizeOperation) -> Unit,
 ) {
     items(
@@ -746,6 +757,7 @@ fun LazyGridScope.EditTiles(
                         onRemoveTile = onRemoveTile,
                         coroutineScope = coroutineScope,
                         largeTilesSpan = largeTilesSpan,
+                        tileShapeConfig = tileShapeConfig,
                         modifier =
                             Modifier.animateItem(
                                 placementSpec =
@@ -794,6 +806,7 @@ private fun TileGridCell(
     onRemoveTile: (TileSpec) -> Unit,
     coroutineScope: CoroutineScope,
     largeTilesSpan: Int,
+    tileShapeConfig: TileShapeConfig,
     modifier: Modifier = Modifier,
 ) {
     val stateDescription = stringResource(id = R.string.accessibility_qs_edit_position, index + 1)
@@ -820,6 +833,8 @@ private fun TileGridCell(
             onResize(resizingState.finalResizeOperation)
         }
     }
+
+    val shapeStyle by rememberTileShapeConfig(tileShapeConfig)
 
     val totalPadding =
         with(LocalDensity.current) { (largeTilesSpan - 1) * columnSpacing.roundToPx() }
@@ -910,7 +925,7 @@ private fun TileGridCell(
                         DragType.Move,
                         selectionState::unSelect,
                     )
-                    .tileBackground(cell, columnSpacing, progress()) { backgroundColor }
+                    .tileBackground(cell, columnSpacing, progress(), shapeStyle) { backgroundColor }
             ) {
                 EditTile(
                     tile = cell.tile,
@@ -951,6 +966,7 @@ private fun AvailableTileGridCell(
     dragAndDropState: DragAndDropState,
     selectionState: MutableSelectionState,
     onAddTile: (TileSpec) -> Unit,
+    tileShapeConfig: TileShapeConfig,
     modifier: Modifier = Modifier,
 ) {
     val stateDescription: String? =
@@ -959,6 +975,8 @@ private fun AvailableTileGridCell(
 
     val alpha by animateFloatAsState(if (cell.isAvailable) 1f else .38f)
     val colors = EditModeTileDefaults.editTileColors()
+
+    val shapeStyle by rememberTileShapeConfig(tileShapeConfig)
 
     // Displays the tile as an icon tile with the label underneath
     Column(
@@ -984,7 +1002,11 @@ private fun AvailableTileGridCell(
                 } else {
                     Modifier
                 }
-            Box(draggableModifier.fillMaxSize().tileBackground(cell, columnSpacing) { colors.background }) {
+            Box(
+                draggableModifier
+                    .fillMaxSize()
+                    .tileBackground(cell, columnSpacing, 0f, shapeStyle) { colors.background }
+            ) {
                 // Icon
                 SmallTileContent(
                     iconProvider = { cell.tile.icon },
@@ -1106,13 +1128,22 @@ private fun Modifier.tileBackground(
     cell: SizedTile<EditTileViewModel>,
     columnSpacing: Dp,
     progress: Float = 0f,
+    shapeStyle: TileShapeStyle,
     color: () -> Color
 ): Modifier = drawWithContent {
     val fullCircle = size.width / 2f
     val tileHeight = fullCircle - (columnSpacing.toPx() / 2f)
-    val roundedRect = tileHeight / 2f
-
-    val radius = lerp(fullCircle, roundedRect, progress)
+    
+    val radius = when (shapeStyle) {
+        TileShapeStyle.ROUNDED -> {
+            val roundedRect = tileHeight / 2f
+            lerp(fullCircle, roundedRect, progress)
+        }
+        TileShapeStyle.ROUNDED_RECTANGLE -> {
+            val rectRadius = TileShapeConfig.ROUNDED_RECT_RADIUS_DP.dp.toPx()
+            rectRadius
+        }
+    }
 
     drawRoundRect(
         color = color(),

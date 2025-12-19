@@ -104,6 +104,7 @@ import com.android.systemui.plugins.BcSmartspaceConfigPlugin;
 import com.android.systemui.plugins.BcSmartspaceDataPlugin;
 import com.android.systemui.privacy.PrivacyModule;
 import com.android.systemui.process.condition.SystemProcessCondition;
+import com.android.systemui.qs.panels.ui.compose.TileShapeConfig;
 import com.android.systemui.qs.FgsManagerController;
 import com.android.systemui.qs.FgsManagerControllerImpl;
 import com.android.systemui.qs.QSFragmentStartableModule;
@@ -534,5 +535,11 @@ public abstract class SystemUIModule {
     @SysUISingleton
     static Handler provideHandler() {
         return new Handler(Looper.getMainLooper());
+    }
+
+    @Provides
+    @SysUISingleton
+    static TileShapeConfig provideTileShapeConfig(Context context) {
+        return new TileShapeConfig(context);
     }
 }

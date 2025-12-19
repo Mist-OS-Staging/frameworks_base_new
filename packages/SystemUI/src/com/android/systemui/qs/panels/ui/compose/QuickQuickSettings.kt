@@ -40,6 +40,7 @@ import com.android.systemui.res.R
 @Composable
 fun ContentScope.QuickQuickSettings(
     viewModel: QuickQuickSettingsViewModel,
+    tileShapeConfig: TileShapeConfig,
     modifier: Modifier = Modifier,
     listening: () -> Boolean,
 ) {
@@ -75,6 +76,7 @@ fun ContentScope.QuickQuickSettings(
             Element(it.tile.spec.toElementKey(spanIndex), Modifier) {
                 Tile(
                     tile = it.tile,
+                    tileShapeConfig = tileShapeConfig,
                     iconOnly = it.isIcon,
                     squishiness = { squishiness },
                     coroutineScope = scope,
