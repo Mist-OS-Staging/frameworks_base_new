@@ -18,6 +18,7 @@ package com.android.systemui.qs.panels.ui.compose
 
 import android.content.Context
 import android.provider.Settings
+import android.service.quicksettings.Tile
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
@@ -31,7 +32,9 @@ import javax.inject.Inject
 
 enum class TileShapeStyle {
     ROUNDED,
-    ROUNDED_RECTANGLE
+    ROUNDED_RECTANGLE,
+    ROUNDED_WHEN_ACTIVE,
+    RECTANGULAR_WHEN_ACTIVE
 }
 
 @SysUISingleton
@@ -68,25 +71,43 @@ class TileShapeConfig @Inject constructor(
         )
     }
 
-    fun getCornerRadius(tileWidth: Dp, tileHeight: Dp): Dp {
+    fun getEffectiveStyle(isActive: Boolean): TileShapeStyle {
         return when (_shapeStyle.value) {
-            TileShapeStyle.ROUNDED -> tileWidth / 2
-            TileShapeStyle.ROUNDED_RECTANGLE -> ROUNDED_RECT_RADIUS_DP.dp
+            TileShapeStyle.ROUNDED_WHEN_ACTIVE -> {
+                if (isActive) TileShapeStyle.ROUNDED else TileShapeStyle.ROUNDED_RECTANGLE
+            }
+            TileShapeStyle.RECTANGULAR_WHEN_ACTIVE -> {
+                if (isActive) TileShapeStyle.ROUNDED_RECTANGLE else TileShapeStyle.ROUNDED
+            }
+            else -> _shapeStyle.value
         }
     }
 
-    fun getIconTileShape(tileSize: Dp): RoundedCornerShape {
-        val radius = when (_shapeStyle.value) {
+    fun getCornerRadius(tileWidth: Dp, tileHeight: Dp, isActive: Boolean = false): Dp {
+        val effectiveStyle = getEffectiveStyle(isActive)
+        return when (effectiveStyle) {
+            TileShapeStyle.ROUNDED -> tileWidth / 2
+            TileShapeStyle.ROUNDED_RECTANGLE -> ROUNDED_RECT_RADIUS_DP.dp
+            else -> tileWidth / 2
+        }
+    }
+
+    fun getIconTileShape(tileSize: Dp, isActive: Boolean = false): RoundedCornerShape {
+        val effectiveStyle = getEffectiveStyle(isActive)
+        val radius = when (effectiveStyle) {
             TileShapeStyle.ROUNDED -> tileSize / 2
             TileShapeStyle.ROUNDED_RECTANGLE -> ROUNDED_RECT_RADIUS_DP.dp
+            else -> tileSize / 2
         }
         return RoundedCornerShape(radius)
     }
 
-    fun getLargeTileShape(tileWidth: Dp, tileHeight: Dp): RoundedCornerShape {
-        val radius = when (_shapeStyle.value) {
+    fun getLargeTileShape(tileWidth: Dp, tileHeight: Dp, isActive: Boolean = false): RoundedCornerShape {
+        val effectiveStyle = getEffectiveStyle(isActive)
+        val radius = when (effectiveStyle) {
             TileShapeStyle.ROUNDED -> tileHeight / 2
             TileShapeStyle.ROUNDED_RECTANGLE -> ROUNDED_RECT_RADIUS_DP.dp
+            else -> tileHeight / 2
         }
         return RoundedCornerShape(radius)
     }
@@ -95,4 +116,8 @@ class TileShapeConfig @Inject constructor(
 @Composable
 fun rememberTileShapeConfig(config: TileShapeConfig): State<TileShapeStyle> {
     return config.shapeStyle.collectAsState()
+}
+
+fun isTileActive(tileState: Int): Boolean {
+    return tileState == Tile.STATE_ACTIVE
 }

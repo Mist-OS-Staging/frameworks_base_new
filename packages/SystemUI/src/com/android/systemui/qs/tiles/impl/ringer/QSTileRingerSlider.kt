@@ -38,6 +38,7 @@ import com.android.systemui.res.R
 @Composable
 fun QSTileRingerSlider(
     tileShapeConfig: TileShapeConfig,
+    isActive: Boolean = false,
     border: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -55,17 +56,21 @@ fun QSTileRingerSlider(
             heightPx.toDp()
         }
         
-        val containerShape = remember(shapeStyle, tileHeight) {
-            when (shapeStyle) {
+        val containerShape = remember(shapeStyle, tileHeight, isActive) {
+            val effectiveStyle = tileShapeConfig.getEffectiveStyle(isActive)
+            when (effectiveStyle) {
                 TileShapeStyle.ROUNDED -> RoundedCornerShape(tileHeight / 2)
                 TileShapeStyle.ROUNDED_RECTANGLE -> RoundedCornerShape(TileShapeConfig.ROUNDED_RECT_RADIUS_DP.dp)
+                else -> RoundedCornerShape(tileHeight / 2)
             }
         }
         
-        val thumbShape = remember(shapeStyle, tileHeight) {
-            when (shapeStyle) {
+        val thumbShape = remember(shapeStyle, tileHeight, isActive) {
+            val effectiveStyle = tileShapeConfig.getEffectiveStyle(isActive)
+            when (effectiveStyle) {
                 TileShapeStyle.ROUNDED -> RoundedCornerShape(tileHeight / 2)
                 TileShapeStyle.ROUNDED_RECTANGLE -> RoundedCornerShape(TileShapeConfig.ROUNDED_RECT_RADIUS_DP.dp)
+                else -> RoundedCornerShape(tileHeight / 2)
             }
         }
         

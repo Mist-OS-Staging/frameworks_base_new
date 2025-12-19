@@ -835,6 +835,8 @@ private fun TileGridCell(
     }
 
     val shapeStyle by rememberTileShapeConfig(tileShapeConfig)
+    
+    val isActive = false
 
     val totalPadding =
         with(LocalDensity.current) { (largeTilesSpan - 1) * columnSpacing.roundToPx() }
@@ -925,7 +927,14 @@ private fun TileGridCell(
                         DragType.Move,
                         selectionState::unSelect,
                     )
-                    .tileBackground(cell, columnSpacing, progress(), shapeStyle) { backgroundColor }
+                    .tileBackground(
+                        cell, 
+                        columnSpacing, 
+                        progress(), 
+                        shapeStyle, 
+                        isActive,
+                        tileShapeConfig
+                    ) { backgroundColor }
             ) {
                 EditTile(
                     tile = cell.tile,
@@ -977,6 +986,7 @@ private fun AvailableTileGridCell(
     val colors = EditModeTileDefaults.editTileColors()
 
     val shapeStyle by rememberTileShapeConfig(tileShapeConfig)
+    val isActive = false
 
     // Displays the tile as an icon tile with the label underneath
     Column(
@@ -1005,7 +1015,14 @@ private fun AvailableTileGridCell(
             Box(
                 draggableModifier
                     .fillMaxSize()
-                    .tileBackground(cell, columnSpacing, 0f, shapeStyle) { colors.background }
+                    .tileBackground(
+                        cell, 
+                        columnSpacing, 
+                        0f, 
+                        shapeStyle, 
+                        isActive,
+                        tileShapeConfig
+                    ) { colors.background }
             ) {
                 // Icon
                 SmallTileContent(
@@ -1129,12 +1146,20 @@ private fun Modifier.tileBackground(
     columnSpacing: Dp,
     progress: Float = 0f,
     shapeStyle: TileShapeStyle,
+    isActive: Boolean = false,
+    tileShapeConfig: TileShapeConfig? = null,
     color: () -> Color
 ): Modifier = drawWithContent {
     val fullCircle = size.width / 2f
     val tileHeight = fullCircle - (columnSpacing.toPx() / 2f)
     
-    val radius = when (shapeStyle) {
+    val effectiveStyle = if (tileShapeConfig != null) {
+        tileShapeConfig.getEffectiveStyle(isActive)
+    } else {
+        shapeStyle
+    }
+    
+    val radius = when (effectiveStyle) {
         TileShapeStyle.ROUNDED -> {
             val roundedRect = tileHeight / 2f
             lerp(fullCircle, roundedRect, progress)
@@ -1142,6 +1167,10 @@ private fun Modifier.tileBackground(
         TileShapeStyle.ROUNDED_RECTANGLE -> {
             val rectRadius = TileShapeConfig.ROUNDED_RECT_RADIUS_DP.dp.toPx()
             rectRadius
+        }
+        else -> {
+            val roundedRect = tileHeight / 2f
+            lerp(fullCircle, roundedRect, progress)
         }
     }
 

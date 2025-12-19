@@ -216,25 +216,29 @@ fun Tile(
         if (tile.spec.spec == "sound" && !iconOnly) {
             QSTileRingerSlider(
                 tileShapeConfig = tileShapeConfig,
+                isActive = uiState.state == STATE_ACTIVE,
                 border = Modifier
             )
             return@trace
         }
 
         val shapeStyle by rememberTileShapeConfig(tileShapeConfig)
+        val isActive = uiState.state == STATE_ACTIVE
 
         BoxWithConstraints {
             val spacing = dimensionResource(R.dimen.qs_tile_margin_horizontal)
             val tileHeight = (maxWidth / 2) - (spacing / 2)
 
-            val tileShape = remember(iconOnly, maxWidth, tileHeight, shapeStyle) {
-                val radius = when (shapeStyle) {
+            val tileShape = remember(iconOnly, maxWidth, tileHeight, shapeStyle, isActive) {
+                val effectiveStyle = tileShapeConfig.getEffectiveStyle(isActive)
+                val radius = when (effectiveStyle) {
                     TileShapeStyle.ROUNDED -> {
                         if (iconOnly) maxWidth / 2 else tileHeight / 2
                     }
                     TileShapeStyle.ROUNDED_RECTANGLE -> {
                         TileShapeConfig.ROUNDED_RECT_RADIUS_DP.dp
                     }
+                    else -> if (iconOnly) maxWidth / 2 else tileHeight / 2
                 }
                 RoundedCornerShape(radius)
             }
