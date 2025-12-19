@@ -161,8 +161,11 @@ import com.android.systemui.qs.panels.ui.compose.selection.rememberResizingState
 import com.android.systemui.qs.panels.ui.compose.selection.rememberSelectionState
 import com.android.systemui.qs.panels.ui.compose.selection.selectableTile
 import com.android.systemui.qs.panels.ui.compose.TileShapeConfig
+import com.android.systemui.qs.panels.ui.compose.TileSpacingConfig
 import com.android.systemui.qs.panels.ui.compose.TileShapeStyle
 import com.android.systemui.qs.panels.ui.compose.rememberTileShapeConfig
+import com.android.systemui.qs.panels.ui.compose.rememberHorizontalTileSpacing
+import com.android.systemui.qs.panels.ui.compose.rememberVerticalTileSpacing
 import com.android.systemui.qs.panels.ui.model.AvailableTileGridCell
 import com.android.systemui.qs.panels.ui.model.GridCell
 import com.android.systemui.qs.panels.ui.model.SpacerGridCell
@@ -237,6 +240,7 @@ fun DefaultEditTileGrid(
     columns: Int,
     largeTilesSpan: Int,
     tileShapeConfig: TileShapeConfig,
+    tileSpacingConfig: TileSpacingConfig,
     modifier: Modifier,
     onAddTile: (TileSpec, Int) -> Unit,
     onRemoveTile: (TileSpec) -> Unit,
@@ -321,6 +325,7 @@ fun DefaultEditTileGrid(
                     onRemoveTile,
                     onSetTiles,
                     tileShapeConfig,
+                    tileSpacingConfig,
                 )
 
                 // Sets a minimum height to be used when available tiles are hidden
@@ -360,6 +365,7 @@ fun DefaultEditTileGrid(
                                 { onAddTile(it, listState.tileSpecs().size) }, // Add to the end
                                 listState,
                                 tileShapeConfig,
+                                tileSpacingConfig,
                             )
                         }
                     }
@@ -527,11 +533,14 @@ private fun CurrentTilesGrid(
     onRemoveTile: (TileSpec) -> Unit,
     onSetTiles: (List<TileSpec>) -> Unit,
     tileShapeConfig: TileShapeConfig,
+    tileSpacingConfig: TileSpacingConfig,
 ) {
     val currentListState by rememberUpdatedState(listState)
     val totalRows = listState.tiles.lastOrNull()?.row ?: 0
     val columnSpacing = EditTileGridItemPadding
     val rowSpacing = EditTileGridItemPadding
+    val horizontalSpacing by rememberHorizontalTileSpacing(tileSpacingConfig)
+    val verticalSpacing by rememberVerticalTileSpacing(tileSpacingConfig)
     val tileSize = rememberTileSize(columns, CurrentTilesGridPadding, columnSpacing)
     val totalHeight by animateDpAsState(
         targetValue = if (tileSize > 0.dp) {
@@ -549,8 +558,8 @@ private fun CurrentTilesGrid(
     TileLazyGrid(
         state = gridState,
         columns = GridCells.Fixed(columns),
-        columnSpacing = columnSpacing,
-        rowSpacing = rowSpacing,
+        columnSpacing = horizontalSpacing,
+        rowSpacing = verticalSpacing,
         contentPadding = PaddingValues(CurrentTilesGridPadding),
         modifier =
             Modifier.fillMaxWidth()
@@ -578,7 +587,7 @@ private fun CurrentTilesGrid(
     ) {
         EditTiles(
             cells = cells,
-            columnSpacing = columnSpacing,
+            columnSpacing = horizontalSpacing,
             dragAndDropState = listState,
             selectionState = selectionState,
             coroutineScope = coroutineScope,
@@ -629,12 +638,15 @@ private fun AvailableTileGrid(
     onAddTile: (TileSpec) -> Unit,
     dragAndDropState: DragAndDropState,
     tileShapeConfig: TileShapeConfig,
+    tileSpacingConfig: TileSpacingConfig,
 ) {
     // Available tiles aren't visible during drag and drop, so the row/col isn't needed
     val groupedTiles =
         remember(tiles.fastMap { it.tile.category }, tiles.fastMap { it.tile.label }) {
             groupAndSort(tiles)
         }
+
+    val horizontalSpacing by rememberHorizontalTileSpacing(tileSpacingConfig)
 
     // Available tiles
     Column(
@@ -664,13 +676,14 @@ private fun AvailableTileGrid(
                     )
                     tiles.chunked(columns).forEach { row ->
                         Row(
-                            horizontalArrangement = spacedBy(TileArrangementPadding),
+                            horizontalArrangement = spacedBy(horizontalSpacing),
                             modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max),
                         ) {
                             row.forEach { tileGridCell ->
                                 key(tileGridCell.key) {
                                     AvailableTileGridCell(
                                         cell = tileGridCell,
+                                        columnSpacing = horizontalSpacing,
                                         dragAndDropState = dragAndDropState,
                                         selectionState = selectionState,
                                         onAddTile = onAddTile,

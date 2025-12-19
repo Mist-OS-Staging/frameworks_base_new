@@ -144,6 +144,9 @@ import com.android.systemui.qs.panels.ui.compose.EditMode
 import com.android.systemui.qs.panels.ui.compose.QuickQuickSettings
 import com.android.systemui.qs.panels.ui.compose.TileGrid
 import com.android.systemui.qs.panels.ui.compose.TileShapeConfig
+import com.android.systemui.qs.panels.ui.compose.TileSpacingConfig
+import com.android.systemui.qs.panels.ui.compose.rememberHorizontalTileSpacing
+import com.android.systemui.qs.panels.ui.compose.rememberVerticalTileSpacing
 import com.android.systemui.qs.shared.ui.ElementKeys
 import com.android.systemui.qs.ui.composable.QuickSettingsShade
 import com.android.systemui.qs.ui.composable.QuickSettingsShade.systemGestureExclusionInShade
@@ -187,6 +190,7 @@ constructor(
     private val miniPlayerViewModelFactory: MiniPlayerViewModel.Factory,
     private val dumpManager: DumpManager,
     private val tileShapeConfig: TileShapeConfig,
+    private val tileSpacingConfig: TileSpacingConfig,
 ) : LifecycleFragment(), QS, Dumpable {
 
     private val scrollListener = MutableStateFlow<QS.ScrollListener?>(null)
@@ -691,6 +695,7 @@ constructor(
                         QuickQuickSettings(
                             viewModel = viewModel.quickQuickSettingsViewModel,
                             tileShapeConfig = tileShapeConfig,
+                            tileSpacingConfig = tileSpacingConfig,
                             listening = {
                                 /*
                                  *  When always compose is false, this will always be true, and we'll be
@@ -772,6 +777,7 @@ constructor(
         val squishiness by
             viewModel.quickQuickSettingsViewModel.squishinessViewModel.squishiness
                 .collectAsStateWithLifecycle()
+        val verticalSpacing by rememberVerticalTileSpacing(tileSpacingConfig)
         Column(
             modifier =
                 modifier.collapseExpandSemanticAction(

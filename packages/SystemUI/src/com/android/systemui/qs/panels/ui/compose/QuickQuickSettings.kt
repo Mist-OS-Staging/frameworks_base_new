@@ -41,6 +41,7 @@ import com.android.systemui.res.R
 fun ContentScope.QuickQuickSettings(
     viewModel: QuickQuickSettingsViewModel,
     tileShapeConfig: TileShapeConfig,
+    tileSpacingConfig: TileSpacingConfig,
     modifier: Modifier = Modifier,
     listening: () -> Boolean,
 ) {
@@ -61,13 +62,17 @@ fun ContentScope.QuickQuickSettings(
     val spans by remember(sizedTiles) { derivedStateOf { sizedTiles.fastMap { it.width } } }
 
     val columns = viewModel.columns
+
+    val horizontalSpacing by rememberHorizontalTileSpacing(tileSpacingConfig)
+    val verticalSpacing by rememberVerticalTileSpacing(tileSpacingConfig)
+
     Box(modifier = modifier) {
         GridAnchor()
     
         VerticalSpannedGrid(
             columns = columns,
-            columnSpacing = dimensionResource(R.dimen.qs_tile_margin_horizontal),
-            rowSpacing = dimensionResource(R.dimen.qs_tile_margin_vertical),
+            columnSpacing = horizontalSpacing,
+            rowSpacing = verticalSpacing,
             spans = spans,
             modifier = Modifier.sysuiResTag("qqs_tile_layout"),
             keys = { sizedTiles[it].tile.spec },
@@ -77,6 +82,7 @@ fun ContentScope.QuickQuickSettings(
                 Tile(
                     tile = it.tile,
                     tileShapeConfig = tileShapeConfig,
+                    tileSpacingConfig = tileSpacingConfig,
                     iconOnly = it.isIcon,
                     squishiness = { squishiness },
                     coroutineScope = scope,

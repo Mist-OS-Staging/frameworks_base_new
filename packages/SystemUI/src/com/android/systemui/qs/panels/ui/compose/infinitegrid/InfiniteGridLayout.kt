@@ -36,6 +36,9 @@ import com.android.systemui.qs.panels.shared.model.SizedTileImpl
 import com.android.systemui.qs.panels.ui.compose.PaginatableGridLayout
 import com.android.systemui.qs.panels.ui.compose.TileListener
 import com.android.systemui.qs.panels.ui.compose.TileShapeConfig
+import com.android.systemui.qs.panels.ui.compose.TileSpacingConfig
+import com.android.systemui.qs.panels.ui.compose.rememberHorizontalTileSpacing
+import com.android.systemui.qs.panels.ui.compose.rememberVerticalTileSpacing
 import com.android.systemui.qs.panels.ui.compose.bounceableInfo
 import com.android.systemui.qs.panels.ui.compose.rememberEditListState
 import com.android.systemui.qs.panels.ui.viewmodel.BounceableTileViewModel
@@ -58,6 +61,7 @@ constructor(
     private val viewModelFactory: InfiniteGridViewModel.Factory,
     private val tileHapticsViewModelFactoryProvider: TileHapticsViewModelFactoryProvider,
     private val tileShapeConfig: TileShapeConfig,
+    private val tileSpacingConfig: TileSpacingConfig,
 ) : PaginatableGridLayout {
 
     @Composable
@@ -103,11 +107,13 @@ constructor(
         val scope = rememberCoroutineScope()
         val spans by remember(sizedTiles) { derivedStateOf { sizedTiles.fastMap { it.width } } }
 
+        val horizontalSpacing by rememberHorizontalTileSpacing(tileSpacingConfig)
+        val verticalSpacing by rememberVerticalTileSpacing(tileSpacingConfig)
 
         VerticalSpannedGrid(
             columns = columns,
-            columnSpacing = dimensionResource(R.dimen.qs_tile_margin_horizontal),
-            rowSpacing = dimensionResource(R.dimen.qs_tile_margin_vertical),
+            columnSpacing = horizontalSpacing,
+            rowSpacing = verticalSpacing,
             spans = spans,
             keys = { sizedTiles[it].tile.spec },
         ) { spanIndex, column, isFirstInColumn, isLastInColumn ->
@@ -130,6 +136,7 @@ constructor(
                     tileHapticsViewModelFactoryProvider = tileHapticsViewModelFactoryProvider,
                     interactionSource = interactionSources[spanIndex],
                     tileShapeConfig = tileShapeConfig,
+                    tileSpacingConfig = tileSpacingConfig,
                     detailsViewModel = detailsViewModel,
                     isVisible = listening,
                 )
@@ -183,6 +190,7 @@ constructor(
             otherTiles = otherTiles,
             columns = columns,
             tileShapeConfig = tileShapeConfig,
+            tileSpacingConfig = tileSpacingConfig,
             modifier = modifier,
             onAddTile = onAddTile,
             onRemoveTile = onRemoveTile,

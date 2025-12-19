@@ -105,8 +105,11 @@ import com.android.systemui.qs.panels.ui.compose.infinitegrid.CommonTileDefaults
 import com.android.systemui.qs.panels.ui.compose.infinitegrid.CommonTileDefaults.longPressLabel
 import com.android.systemui.qs.panels.ui.compose.BounceableInfo
 import com.android.systemui.qs.panels.ui.compose.TileShapeConfig
+import com.android.systemui.qs.panels.ui.compose.TileSpacingConfig
 import com.android.systemui.qs.panels.ui.compose.TileShapeStyle
 import com.android.systemui.qs.panels.ui.compose.rememberTileShapeConfig
+import com.android.systemui.qs.panels.ui.compose.rememberHorizontalTileSpacing
+import com.android.systemui.qs.panels.ui.compose.rememberVerticalTileSpacing
 import com.android.systemui.qs.panels.ui.viewmodel.AccessibilityUiState
 import com.android.systemui.qs.panels.ui.viewmodel.BounceableTileViewModel
 import com.android.systemui.qs.panels.ui.viewmodel.DetailsViewModel
@@ -182,6 +185,7 @@ fun Tile(
     tileHapticsViewModelFactoryProvider: TileHapticsViewModelFactoryProvider,
     interactionSource: MutableInteractionSource?,
     tileShapeConfig: TileShapeConfig,
+    tileSpacingConfig: TileSpacingConfig,
     modifier: Modifier = Modifier,
     isVisible: () -> Boolean = { true },
     requestToggleTextFeedback: (TileSpec) -> Unit = {},
@@ -225,9 +229,10 @@ fun Tile(
         val shapeStyle by rememberTileShapeConfig(tileShapeConfig)
         val isActive = uiState.state == STATE_ACTIVE
 
+        val horizontalSpacing by rememberHorizontalTileSpacing(tileSpacingConfig)
+
         BoxWithConstraints {
-            val spacing = dimensionResource(R.dimen.qs_tile_margin_horizontal)
-            val tileHeight = (maxWidth / 2) - (spacing / 2)
+            val tileHeight = (maxWidth / 2) - (horizontalSpacing / 2)
 
             val tileShape = remember(iconOnly, maxWidth, tileHeight, shapeStyle, isActive) {
                 val effectiveStyle = tileShapeConfig.getEffectiveStyle(isActive)

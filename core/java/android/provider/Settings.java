@@ -7701,6 +7701,16 @@ public final class Settings {
         public static final String QS_TILE_SHAPE_STYLE = "qs_tile_shape_style";
 
         /**
+         * @hide
+         */
+        public static final String QS_TILE_HORIZONTAL_SPACING = "qs_tile_horizontal_spacing";
+
+        /**
+         * @hide
+         */
+        public static final String QS_TILE_VERTICAL_SPACING = "qs_tile_vertical_spacing";
+
+        /**
          * What to show at the bottom of the Ambient display
          * 0: Nothing.
          * 1: Battery Percentage.
