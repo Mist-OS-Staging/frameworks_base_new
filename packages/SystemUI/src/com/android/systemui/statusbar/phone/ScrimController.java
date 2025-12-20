@@ -71,6 +71,7 @@ import com.android.systemui.keyguard.shared.model.TransitionStep;
 import com.android.systemui.keyguard.ui.transitions.BlurConfig;
 import com.android.systemui.keyguard.ui.viewmodel.AlternateBouncerToGoneTransitionViewModel;
 import com.android.systemui.keyguard.ui.viewmodel.PrimaryBouncerToGoneTransitionViewModel;
+import com.android.systemui.media.controls.domain.pipeline.MediaDataManager;
 import com.android.systemui.res.R;
 import com.android.systemui.scene.shared.flag.SceneContainerFlag;
 import com.android.systemui.scene.shared.model.Scenes;
@@ -137,6 +138,8 @@ public class ScrimController implements ViewTreeObserver.OnPreDrawListener, Dump
     public static final int OPAQUE = 2;
     private boolean mClipsQsScrim;
     private int mBackgroundColor = Color.TRANSPARENT;
+
+    private boolean mUseMediaArtScrim = false;
 
     /**
      * Whether an activity is launching over the lockscreen. During the launch animation, we want to
@@ -298,6 +301,8 @@ public class ScrimController implements ViewTreeObserver.OnPreDrawListener, Dump
     private boolean mWakeLockHeld;
     private boolean mKeyguardOccluded;
 
+    private MediaArtScrimController mMediaArtScrimController;
+
     private KeyguardTransitionInteractor mKeyguardTransitionInteractor;
     private CoroutineDispatcher mMainDispatcher;
     private boolean mIsBouncerToGoneTransitionRunning = false;
@@ -413,6 +418,7 @@ public class ScrimController implements ViewTreeObserver.OnPreDrawListener, Dump
         mKeyguardTransitionInteractor = keyguardTransitionInteractor;
         mKeyguardInteractor = keyguardInteractor;
         mMainDispatcher = mainDispatcher;
+        mMediaArtScrimController = new MediaArtScrimController(context);
     }
 
     /**
@@ -439,6 +445,10 @@ public class ScrimController implements ViewTreeObserver.OnPreDrawListener, Dump
             states[i].setDefaultScrimAlpha(getDefaultScrimAlpha());
         }
 
+        if (mMediaArtScrimController != null) {
+            mMediaArtScrimController.attachViews(notificationsScrim, behindScrim);
+        }
+
         mTransparentScrimBackground = notificationsScrim.getResources()
                 .getBoolean(R.bool.notification_scrim_transparent);
         updateScrims();
@@ -452,6 +462,19 @@ public class ScrimController implements ViewTreeObserver.OnPreDrawListener, Dump
         hydrateStateInternally(behindScrim);
 
         mViewsAttached = true;
+    }
+
+    public void setUseMediaArtScrim(boolean use) {
+        if (mUseMediaArtScrim != use) {
+            mUseMediaArtScrim = use;
+            scheduleUpdate();
+        }
+    }
+
+    public void setPanelExpansion(float expansion) {
+        if (mMediaArtScrimController != null) {
+            mMediaArtScrimController.onPanelExpansionChanged(expansion);
+        }
     }
 
     private void hydrateStateInternally(ScrimView behindScrim) {
@@ -1343,7 +1366,16 @@ public class ScrimController implements ViewTreeObserver.OnPreDrawListener, Dump
         return ShadeInterpolation.getNotificationScrimAlpha(mPanelExpansionFraction);
     }
 
+    private boolean shouldSkipNotificationsScrimUpdate() {
+        return mMediaArtScrimController != null && 
+            mMediaArtScrimController.isMediaArtApplied();
+    }
+
     private void setScrimAlpha(ScrimView scrim, float alpha) {
+        if (scrim == mNotificationsScrim && shouldSkipNotificationsScrimUpdate()) {
+            return;
+        }
+
         if (alpha == 0f) {
             scrim.setClickable(false);
         } else {
@@ -1368,6 +1400,11 @@ public class ScrimController implements ViewTreeObserver.OnPreDrawListener, Dump
         alpha = Math.max(0, Math.min(1.0f, alpha));
         if (scrim instanceof ScrimView) {
             ScrimView scrimView = (ScrimView) scrim;
+            
+            if (scrimView == mNotificationsScrim && shouldSkipNotificationsScrimUpdate()) {
+                return;
+            }
+
             if (DEBUG_MODE) {
                 tint = getDebugScrimTint(scrimView);
             }
@@ -1530,6 +1567,10 @@ public class ScrimController implements ViewTreeObserver.OnPreDrawListener, Dump
     }
 
     private void updateScrim(ScrimView scrim, float alpha) {
+        if (scrim == mNotificationsScrim && shouldSkipNotificationsScrimUpdate()) {
+            return;
+        }
+
         final float currentAlpha = scrim.getViewAlpha();
 
         ValueAnimator previousAnimator = ViewState.getChildTag(scrim, TAG_KEY_ANIM);

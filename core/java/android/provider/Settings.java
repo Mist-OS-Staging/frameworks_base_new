@@ -7266,6 +7266,12 @@ public final class Settings {
         public static final String LS_MEDIA_ART_AOD_DIM_LEVEL = "ls_media_art_aod_dim_level";
 
         /**
+         * Whether to use media artwork as QS scrim background
+         * @hide
+         */
+        public static final String QS_MEDIA_ART_SCRIM_ENABLED = "qs_media_art_scrim_enabled";
+
+        /**
         * Lock Glymps - Dynamic lock screen wallpaper feature
         * @hide
         */

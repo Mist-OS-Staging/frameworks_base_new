@@ -2032,6 +2032,7 @@ public final class NotificationPanelViewController implements
         updateHeader();
         updatePanelExpanded();
         updateGestureExclusionRect();
+        mScrimController.setPanelExpansion(mExpandedFraction);
 
         if (mQsController.isExpandImmediate() && !mQsController.getFullyExpanded()) {
             mNotificationStackScrollLayoutController.getView().setAlpha(0f);
