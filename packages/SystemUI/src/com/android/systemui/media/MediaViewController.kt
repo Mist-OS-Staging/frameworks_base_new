@@ -161,7 +161,7 @@ class MediaViewController @Inject constructor(
         mediaFilter = Settings.System.getIntForUser(
             context.contentResolver,
             Settings.System.LS_MEDIA_ART_FILTER,
-            0,
+            1,
             UserHandle.USER_CURRENT
         )
 
