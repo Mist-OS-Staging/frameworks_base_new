@@ -227,6 +227,7 @@ import com.android.systemui.statusbar.core.StatusBarConnectedDisplays;
 import com.android.systemui.statusbar.core.StatusBarInitializer;
 import com.android.systemui.statusbar.core.StatusBarRootModernization;
 import com.android.systemui.statusbar.data.model.StatusBarMode;
+import com.android.systemui.mist.RebootSuggestion;
 import com.android.systemui.statusbar.data.repository.StatusBarModeRepositoryStore;
 import com.android.systemui.statusbar.notification.NotificationActivityStarter;
 import com.android.systemui.statusbar.notification.NotificationLaunchAnimatorControllerProvider;
@@ -475,6 +476,8 @@ public class CentralSurfacesImpl implements CoreStartable, CentralSurfaces,
     private final NotificationsController mNotificationsController;
     private final StatusBarSignalPolicy mStatusBarSignalPolicy;
     private final StatusBarHideIconsForBouncerManager mStatusBarHideIconsForBouncerManager;
+
+    private final RebootSuggestion mRebootSuggestion;
 
     /** Controller for the Shade. */
     private final ShadeSurface mShadeSurface;
@@ -937,6 +940,8 @@ public class CentralSurfacesImpl implements CoreStartable, CentralSurfaces,
         mWindowManager = windowManager;
         mWindowManagerProvider = windowManagerProvider;
         
+        mRebootSuggestion = new RebootSuggestion(mContext);
+
         ScreenAnimationController.INSTANCE().init(mContext,
             new AmbientDisplayConfiguration(mContext));
     }
