@@ -35,7 +35,7 @@ import java.io.InputStream;
 import java.util.Calendar;
 
 import com.android.systemui.res.R;
-import com.android.internal.util.lunaris.Utils;
+import com.android.internal.util.mist.Utils;
 
 public class StaticHeaderProvider implements
         StatusBarHeaderMachine.IStatusBarHeaderProvider {
