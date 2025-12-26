@@ -1,0 +1,14 @@
+# Switch Style System Properties
+# Copyright (C) 2024 MistOS
+
+# Switch style selection (0-9)
+ro.mist.switch_style=0
+
+# Enable custom switch styles
+ro.mist.switch_custom_enabled=false
+
+# Switch animation duration (ms)
+ro.mist.switch_animation_duration=200
+
+# Switch haptic feedback
+ro.mist.switch_haptic_enabled=true

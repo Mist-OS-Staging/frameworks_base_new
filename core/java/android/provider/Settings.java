@@ -5705,6 +5705,41 @@ public final class Settings {
             };
 
         /**
+         * Switch style selection (0-9)
+         * @hide
+         */
+        @Readable
+        public static final String SWITCH_STYLE = "switch_style";
+
+        /**
+         * Enable custom switch styles
+         * @hide
+         */
+        @Readable
+        public static final String SWITCH_CUSTOM_ENABLED = "switch_custom_enabled";
+
+        /**
+         * Switch animation enabled
+         * @hide
+         */
+        @Readable
+        public static final String SWITCH_ANIMATION_ENABLED = "switch_animation_enabled";
+
+        /**
+         * Switch haptic feedback enabled
+         * @hide
+         */
+        @Readable
+        public static final String SWITCH_HAPTIC_FEEDBACK = "switch_haptic_feedback";
+
+        /**
+         * Switch PNG images enabled
+         * @hide
+         */
+        @Readable
+        public static final String SWITCH_PNG_ENABLED = "switch_png_enabled";
+
+        /**
          * Appended to various volume related settings to record the previous
          * values before they the settings were affected by a silent/vibrate
          * ringer mode change.

@@ -137,6 +137,9 @@ public class ThemeOverlayApplier implements Dumpable {
     @VisibleForTesting
     static final String OVERLAY_CATEGORY_LOCK_CLOCK_FONT =
             "android.theme.customization.lockscreen_clock_font";
+    @VisibleForTesting
+    static final String OVERLAY_CATEGORY_SWITCH_STYLE =
+            "android.theme.customization.switch_style";
 
     /*
      * All theme customization categories used by the system, in order that they should be applied,
@@ -155,7 +158,8 @@ public class ThemeOverlayApplier implements Dumpable {
             OVERLAY_CATEGORY_ICON_WIFI,
             OVERLAY_CATEGORY_NAVBAR,
             OVERLAY_CATEGORY_POWER_MENU,
-            OVERLAY_CATEGORY_LOCK_CLOCK_FONT);
+            OVERLAY_CATEGORY_LOCK_CLOCK_FONT,
+            OVERLAY_CATEGORY_SWITCH_STYLE);
 
     /* Categories that need to be applied to the current user as well as the system user. */
     @VisibleForTesting
@@ -197,7 +201,7 @@ public class ThemeOverlayApplier implements Dumpable {
                 OVERLAY_CATEGORY_SYSTEM_PALETTE, OVERLAY_CATEGORY_ACCENT_COLOR,
                 OVERLAY_CATEGORY_DYNAMIC_COLOR,
                 OVERLAY_CATEGORY_FONT, OVERLAY_CATEGORY_SHAPE,
-                OVERLAY_CATEGORY_ICON_ANDROID));
+                OVERLAY_CATEGORY_ICON_ANDROID, OVERLAY_CATEGORY_SWITCH_STYLE));
         mTargetPackageToCategories.put(SYSUI_PACKAGE,
                 Sets.newHashSet(OVERLAY_CATEGORY_ICON_SYSUI));
         mTargetPackageToCategories.put(SETTINGS_PACKAGE,
@@ -214,6 +218,7 @@ public class ThemeOverlayApplier implements Dumpable {
         mCategoryToTargetPackage.put(OVERLAY_CATEGORY_ICON_WIFI, SYSUI_PACKAGE);
         mCategoryToTargetPackage.put(OVERLAY_CATEGORY_NAVBAR, SYSUI_PACKAGE);
         mCategoryToTargetPackage.put(OVERLAY_CATEGORY_POWER_MENU, SYSUI_PACKAGE);
+        mCategoryToTargetPackage.put(OVERLAY_CATEGORY_SWITCH_STYLE, ANDROID_PACKAGE);
 
         dumpManager.registerDumpable(TAG, this);
     }

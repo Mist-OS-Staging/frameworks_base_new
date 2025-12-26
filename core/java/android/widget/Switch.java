@@ -59,6 +59,7 @@ import android.view.inspector.InspectableProperty;
 import android.widget.RemoteViews.RemoteView;
 
 import com.android.internal.R;
+import com.android.internal.widget.SwitchStyleHelper;
 
 /**
  * A Switch is a two-state toggle widget. Users can drag the switch "thumb" back
@@ -536,9 +537,11 @@ public class Switch extends CompoundButton {
         if (mTrackDrawable != null) {
             mTrackDrawable.setCallback(null);
         }
-        mTrackDrawable = track;
-        if (track != null) {
-            track.setCallback(this);
+        // Apply custom switch styling
+        Drawable customTrack = SwitchStyleHelper.getSwitchTrackDrawable(getContext());
+        mTrackDrawable = customTrack != null ? customTrack : track;
+        if (mTrackDrawable != null) {
+            mTrackDrawable.setCallback(this);
         }
         requestLayout();
     }
@@ -714,9 +717,11 @@ public class Switch extends CompoundButton {
         if (mThumbDrawable != null) {
             mThumbDrawable.setCallback(null);
         }
-        mThumbDrawable = thumb;
-        if (thumb != null) {
-            thumb.setCallback(this);
+        // Apply custom switch styling
+        Drawable customThumb = SwitchStyleHelper.getSwitchThumbDrawable(getContext());
+        mThumbDrawable = customThumb != null ? customThumb : thumb;
+        if (mThumbDrawable != null) {
+            mThumbDrawable.setCallback(this);
         }
         requestLayout();
     }
