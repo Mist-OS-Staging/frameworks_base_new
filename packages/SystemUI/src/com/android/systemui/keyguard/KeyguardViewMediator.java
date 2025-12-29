@@ -918,8 +918,8 @@ public class KeyguardViewMediator implements CoreStartable,
                 return;
             }
             NTBoosterController.get().acquireKeyguardGoneAnimationBoost();
-            Log.d(TAG, "keyguardDone");
-            tryKeyguardDone();
+            Log.d(TAG, "keyguardDone: " + targetUserId);
+            tryKeyguardDone(targetUserId);
         }
 
         @Override
