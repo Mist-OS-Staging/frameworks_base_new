@@ -157,7 +157,7 @@ public class GuoguoClockController7 extends BaseLockscreenController {
 
     @Override
     public void onTimeTick() {
-        mDateView.setText(LockscreenClockUtils.getCurrentTimeString("M月d日 EEEE", Locale.CHINESE));
+        mDateView.setText(LockscreenClockUtils.getCurrentTimeString("MMM d, EEEE", Locale.getDefault()));
         String timeString = LockscreenClockUtils.getCurrentTimeString("HHmm");
         if (mUseBlurEffect) {
             mGlassClockManager.updateTime(timeString);

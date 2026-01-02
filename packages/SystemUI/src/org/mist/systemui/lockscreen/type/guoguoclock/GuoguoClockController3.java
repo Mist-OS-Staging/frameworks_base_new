@@ -179,7 +179,7 @@ public class GuoguoClockController3 extends BaseLockscreenController {
 
     @Override
     public void onTimeTick() {
-        mDateView.setText(LockscreenClockUtils.getCurrentTimeString(mContext.getString(R.string.guoguo_date_format), Locale.CHINESE));
+        mDateView.setText(LockscreenClockUtils.getCurrentTimeString(mContext.getString(R.string.guoguo_date_format), Locale.getDefault()));
         String timeString = LockscreenClockUtils.getCurrentTimeString(mContext.getString(R.string.guoguo_time_format));
         if (mUseBlurEffect) {
             mGlassClockManager.updateTime(timeString);

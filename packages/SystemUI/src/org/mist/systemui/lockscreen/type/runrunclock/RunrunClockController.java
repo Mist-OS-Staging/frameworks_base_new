@@ -173,7 +173,7 @@ public class RunrunClockController extends BaseLockscreenController {
         } else {
             mDigitalClockDisplayManager.updateTimeDisplay(timeString);
         }
-        mDateView.setText(LockscreenClockUtils.getCurrentTimeString(mContext.getString(R.string.runrun_date_format), Locale.CHINESE));
+        mDateView.setText(LockscreenClockUtils.getCurrentTimeString(mContext.getString(R.string.runrun_date_format), Locale.getDefault()));
     }
 
     @Override
